@@ -25,7 +25,7 @@ set_source_files_properties(
 cython_add_module( nestgpukernel_api nestgpukernel_api.pyx )
 
 target_link_libraries( nestgpukernel_api
-    nestgpu
+    nestgpukernel
   )
 
 message(STATUS "PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
