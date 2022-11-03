@@ -206,7 +206,9 @@ def Create(model_name, n_node=1, n_ports=1, status_dict=None):
         raise ValueError("Wrong argument in Create")
     
     c_model_name = ctypes.create_string_buffer(to_byte_str(model_name), len(model_name)+1)
-    i_node =NESTGPU_Create(c_model_name, ctypes.c_int(n_node), ctypes.c_int(n_ports))
+    #i_node =NESTGPU_Create(c_model_name, ctypes.c_int(n_node), ctypes.c_int(n_ports))
+    import nestgpukernel_api as ngpukernel
+    i_node = ngpukernel.llapi_create(model_name, n_node, n_ports)
     ret = NodeSeq(i_node, n_node)
     if GetErrorCode() != 0:
         raise ValueError(GetErrorMessage())

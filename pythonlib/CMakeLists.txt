@@ -17,5 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with NEST GPU.  If not, see <http://www.gnu.org/licenses/>.
 
+include( UseCython )
+set_source_files_properties(
+    nestgpukernel_api.pyx
+    PROPERTIES CYTHON_IS_CXX TRUE )
+
+cython_add_module( nestgpukernel_api nestgpukernel_api.pyx )
+
+target_link_libraries( nestgpukernel_api
+    nestgpu
+  )
+
+message(STATUS "PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
+message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
+target_include_directories( nestgpukernel_api PRIVATE
+  ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/src
+  )
+
+install( TARGETS nestgpukernel_api
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR} )
 install( FILES ${PROJECT_SOURCE_DIR}/pythonlib/nestgpu.py
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR} )
