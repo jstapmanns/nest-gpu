@@ -33,6 +33,7 @@ message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 target_include_directories( nestgpukernel_api PRIVATE
   ${PROJECT_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}/src
+  ${Python_INCLUDE_DIRS}
   )
 
 install( TARGETS nestgpukernel_api

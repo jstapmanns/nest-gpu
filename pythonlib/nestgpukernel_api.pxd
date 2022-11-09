@@ -1,9 +1,11 @@
-from libcpp.string cimport string
-
 cdef extern from "nestgpu_C.h":
     int NESTGPU_Connect(int i_source_node, int i_target_node,
             unsigned char port, unsigned char syn_group,
             float weight, float delay) except +
+    int NESTGPU_ConnectSeqSeq(int i_source, int n_source, int i_target, int n_target) except +
+    int NESTGPU_ConnectSeqGroup(int i_source, int n_source, int *i_target, int n_target) except +
+    int NESTGPU_ConnectGroupSeq(int *i_source, int n_source, int i_target, int n_target) except +
+    int NESTGPU_ConnectGroupGroup(int *i_source, int n_source, int *i_target, int n_target) except +
     int NESTGPU_Create(char *model_name, const long n_neuron, const int n_port) except +
 
 '''
