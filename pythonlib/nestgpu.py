@@ -4,6 +4,7 @@ import ctypes, ctypes.util
 import os
 import unicodedata
 import gc
+import nestgpukernel_api as ng_kernel
 
 
 print('\n              -- NEST GPU --\n')
@@ -207,8 +208,7 @@ def Create(model_name, n_node=1, n_ports=1, status_dict=None):
     
     c_model_name = ctypes.create_string_buffer(to_byte_str(model_name), len(model_name)+1)
     #i_node =NESTGPU_Create(c_model_name, ctypes.c_int(n_node), ctypes.c_int(n_ports))
-    import nestgpukernel_api as ngpukernel
-    i_node = ngpukernel.llapi_create(model_name, n_node, n_ports)
+    i_node = ng_kernel.llapi_create(model_name, n_node, n_ports)
     ret = NodeSeq(i_node, n_node)
     if GetErrorCode() != 0:
         raise ValueError(GetErrorMessage())
@@ -1610,7 +1610,7 @@ def Connect(source, target, conn_dict, syn_dict):
         else:
             raise ValueError("Unknown synapse parameter")
     if (type(source)==NodeSeq) & (type(target)==NodeSeq) :
-        ret = NESTGPU_ConnectSeqSeq(source.i0, source.n, target.i0, target.n)
+        ret = ng_kernel.NESTGPU_ConnectSeqSeq(source.i0, source.n, target.i0, target.n)
     else:
         if type(source)!=NodeSeq:
             source_arr = (ctypes.c_int * len(source))(*source) 
@@ -1619,14 +1619,20 @@ def Connect(source, target, conn_dict, syn_dict):
             target_arr = (ctypes.c_int * len(target))(*target) 
             target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)    
         if (type(source)==NodeSeq) & (type(target)!=NodeSeq):
-            ret = NESTGPU_ConnectSeqGroup(source.i0, source.n, target_arr_pt,
+            #ret = NESTGPU_ConnectSeqGroup(source.i0, source.n, target_arr_pt,
+            #                                len(target))
+            ret = ng_kernel.NESTGPU_ConnectSeqGroup(source.i0, source.n, target,
                                             len(target))
         elif (type(source)!=NodeSeq) & (type(target)==NodeSeq):
-            ret = NESTGPU_ConnectGroupSeq(source_arr_pt, len(source),
+            #ret = NESTGPU_ConnectGroupSeq(source_arr_pt, len(source),
+            #                                target.i0, target.n)
+            ret = NESTGPU_ConnectGroupSeq(source, len(source),
                                             target.i0, target.n)
         else:
-            ret = NESTGPU_ConnectGroupGroup(source_arr_pt, len(source),
-                                              target_arr_pt, len(target))
+            #ret = NESTGPU_ConnectGroupGroup(source_arr_pt, len(source),
+            #                                  target_arr_pt, len(target))
+            ret = NESTGPU_ConnectGroupGroup(source, len(source),
+                                              target, len(target))
     if GetErrorCode() != 0:
         raise ValueError(GetErrorMessage())
     gc.enable()
