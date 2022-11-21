@@ -1545,29 +1545,30 @@ def SetSynParamFromArray(param_name, par_dict, array_size):
     array_pt = ctypes.cast(arr, ctypes.c_void_p)
     SetSynSpecFloatPtParam(arr_param_name, array_pt)
 
-    
-NESTGPU_ConnectSeqSeq = _nestgpu.NESTGPU_ConnectSeqSeq
-NESTGPU_ConnectSeqSeq.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                                    ctypes.c_int)
-NESTGPU_ConnectSeqSeq.restype = ctypes.c_int
 
-NESTGPU_ConnectSeqGroup = _nestgpu.NESTGPU_ConnectSeqGroup
-NESTGPU_ConnectSeqGroup.argtypes = (ctypes.c_int, ctypes.c_int,
-                                      ctypes.c_void_p, ctypes.c_int)
-NESTGPU_ConnectSeqGroup.restype = ctypes.c_int
+#NESTGPU_ConnectSeqSeq = _nestgpu.NESTGPU_ConnectSeqSeq
+#NESTGPU_ConnectSeqSeq.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int,
+#                                    ctypes.c_int)
+#NESTGPU_ConnectSeqSeq.restype = ctypes.c_int
+#
+#NESTGPU_ConnectSeqGroup = _nestgpu.NESTGPU_ConnectSeqGroup
+#NESTGPU_ConnectSeqGroup.argtypes = (ctypes.c_int, ctypes.c_int,
+#                                      ctypes.c_void_p, ctypes.c_int)
+#NESTGPU_ConnectSeqGroup.restype = ctypes.c_int
+#
+#NESTGPU_ConnectGroupSeq = _nestgpu.NESTGPU_ConnectGroupSeq
+#NESTGPU_ConnectGroupSeq.argtypes = (ctypes.c_void_p, ctypes.c_int,
+#                                      ctypes.c_int, ctypes.c_int)
+#NESTGPU_ConnectGroupSeq.restype = ctypes.c_int
+#
+#NESTGPU_ConnectGroupGroup = _nestgpu.NESTGPU_ConnectGroupGroup
+#NESTGPU_ConnectGroupGroup.argtypes = (ctypes.c_void_p, ctypes.c_int,
+#                                        ctypes.c_void_p, ctypes.c_int)
+#NESTGPU_ConnectGroupGroup.restype = ctypes.c_int
 
-NESTGPU_ConnectGroupSeq = _nestgpu.NESTGPU_ConnectGroupSeq
-NESTGPU_ConnectGroupSeq.argtypes = (ctypes.c_void_p, ctypes.c_int,
-                                      ctypes.c_int, ctypes.c_int)
-NESTGPU_ConnectGroupSeq.restype = ctypes.c_int
-
-NESTGPU_ConnectGroupGroup = _nestgpu.NESTGPU_ConnectGroupGroup
-NESTGPU_ConnectGroupGroup.argtypes = (ctypes.c_void_p, ctypes.c_int,
-                                        ctypes.c_void_p, ctypes.c_int)
-NESTGPU_ConnectGroupGroup.restype = ctypes.c_int
-
-def Connect(source, target, conn_dict, syn_dict): 
+def Connect(source, target, conn_dict, syn_dict):
     "Connect two node groups"
+    print("nest-gpu.py Connect()")
     if (type(source)!=list) & (type(source)!=tuple) & (type(source)!=NodeSeq):
         raise ValueError("Unknown source type")
     if (type(target)!=list) & (type(target)!=tuple) & (type(target)!=NodeSeq):
@@ -1589,9 +1590,9 @@ def Connect(source, target, conn_dict, syn_dict):
             SetConnSpecParam(param_name, conn_dict[param_name])
         else:
             raise ValueError("Unknown connection parameter")
-    
+
     array_size = RuleArraySize(conn_dict, source, target)
-    
+
     for param_name in syn_dict:
         if SynSpecIsIntParam(param_name):
             val = syn_dict[param_name]
@@ -1610,28 +1611,29 @@ def Connect(source, target, conn_dict, syn_dict):
         else:
             raise ValueError("Unknown synapse parameter")
     if (type(source)==NodeSeq) & (type(target)==NodeSeq) :
-        ret = ng_kernel.NESTGPU_ConnectSeqSeq(source.i0, source.n, target.i0, target.n)
+        #ret = NESTGPU_ConnectSeqSeq(source.i0, source.n, target.i0, target.n)
+        ret = ng_kernel.llapi_connectSeqSeq(source.i0, source.n, target.i0, target.n)
     else:
-        if type(source)!=NodeSeq:
-            source_arr = (ctypes.c_int * len(source))(*source) 
-            source_arr_pt = ctypes.cast(source_arr, ctypes.c_void_p)    
-        if type(target)!=NodeSeq:
-            target_arr = (ctypes.c_int * len(target))(*target) 
-            target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)    
+        #if type(source)!=NodeSeq:
+        #    source_arr = (ctypes.c_int * len(source))(*source) 
+        #    source_arr_pt = ctypes.cast(source_arr, ctypes.c_void_p)    
+        #if type(target)!=NodeSeq:
+        #    target_arr = (ctypes.c_int * len(target))(*target) 
+        #    target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)    
         if (type(source)==NodeSeq) & (type(target)!=NodeSeq):
             #ret = NESTGPU_ConnectSeqGroup(source.i0, source.n, target_arr_pt,
             #                                len(target))
-            ret = ng_kernel.NESTGPU_ConnectSeqGroup(source.i0, source.n, target,
+            ret = ng_kernel.llapi_connectSeqGroup(source.i0, source.n, target,
                                             len(target))
         elif (type(source)!=NodeSeq) & (type(target)==NodeSeq):
             #ret = NESTGPU_ConnectGroupSeq(source_arr_pt, len(source),
             #                                target.i0, target.n)
-            ret = NESTGPU_ConnectGroupSeq(source, len(source),
+            ret = ng_kernel.llapi_connectGroupSeq(source, len(source),
                                             target.i0, target.n)
         else:
             #ret = NESTGPU_ConnectGroupGroup(source_arr_pt, len(source),
             #                                  target_arr_pt, len(target))
-            ret = NESTGPU_ConnectGroupGroup(source, len(source),
+            ret = ng_kernel.llapi_connectGroupGroup(source, len(source),
                                               target, len(target))
     if GetErrorCode() != 0:
         raise ValueError(GetErrorMessage())
@@ -1797,7 +1799,7 @@ NESTGPU_GetGroupGroupConnections.argtypes = (c_void_p, ctypes.c_int,
                                                ctypes.c_int, c_int_p)
 NESTGPU_GetGroupGroupConnections.restype = c_int_p
 
-def GetConnections(source=None, target=None, syn_group=-1): 
+def GetConnections(source=None, target=None, syn_group=-1):
     "Get connections between two node groups"
     if source==None:
         source = NodeSeq(None)
@@ -1811,47 +1813,60 @@ def GetConnections(source=None, target=None, syn_group=-1):
         raise ValueError("Unknown source type")
     if (type(target)!=list) & (type(target)!=tuple) & (type(target)!=NodeSeq):
         raise ValueError("Unknown target type")
-    
+
     n_conn = ctypes.c_int(0)
     if (type(source)==NodeSeq) & (type(target)==NodeSeq) :
-        conn_arr = NESTGPU_GetSeqSeqConnections(source.i0, source.n,
+        #conn_arr = NESTGPU_GetSeqSeqConnections(source.i0, source.n,
+        #                                          target.i0, target.n,
+        #                                          syn_group,
+        #                                          ctypes.byref(n_conn))
+        ng_kernel.llapi_getSeqSeqConnections(source.i0, source.n,
                                                   target.i0, target.n,
-                                                  syn_group,
-                                                  ctypes.byref(n_conn))
+                                                  syn_group)
     else:
         if type(source)!=NodeSeq:
-            source_arr = (ctypes.c_int * len(source))(*source) 
-            source_arr_pt = ctypes.cast(source_arr, ctypes.c_void_p)    
+            source_arr = (ctypes.c_int * len(source))(*source)
+            source_arr_pt = ctypes.cast(source_arr, ctypes.c_void_p)
         if type(target)!=NodeSeq:
-            target_arr = (ctypes.c_int * len(target))(*target) 
-            target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)    
+            target_arr = (ctypes.c_int * len(target))(*target)
+            target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)
         if (type(source)==NodeSeq) & (type(target)!=NodeSeq):
-            conn_arr = NESTGPU_GetSeqGroupConnections(source.i0, source.n,
-                                                        target_arr_pt,
+            #conn_arr = NESTGPU_GetSeqGroupConnections(source.i0, source.n,
+            #                                            target_arr_pt,
+            #                                            len(target),
+            #                                            syn_group,
+            #                                            ctypes.byref(n_conn))
+            ng_kernel.llapi_getSeqGroupConnections(source.i0, source.n,
+                                                        target,
                                                         len(target),
-                                                        syn_group,
-                                                        ctypes.byref(n_conn))
+                                                        syn_group)
         elif (type(source)!=NodeSeq) & (type(target)==NodeSeq):
-            conn_arr = NESTGPU_GetGroupSeqConnections(source_arr_pt,
-                                                        len(source),
+            #conn_arr = NESTGPU_GetGroupSeqConnections(source_arr_pt,
+            #                                            len(source),
+            #                                            target.i0, target.n,
+            #                                            syn_group,
+            #                                            ctypes.byref(n_conn))
+            ret = ng_kernel.llapi_getGroupSeqConnections(source, len(source),
                                                         target.i0, target.n,
-                                                        syn_group,
-                                                        ctypes.byref(n_conn))
+                                                        syn_group)
         else:
-            conn_arr = NESTGPU_GetGroupGroupConnections(source_arr_pt,
-                                                          len(source),
-                                                          target_arr_pt,
-                                                          len(target),
-                                                          syn_group,
-                                                          ctypes.byref(n_conn))
+            #conn_arr = NESTGPU_GetGroupGroupConnections(source_arr_pt,
+            #                                              len(source),
+            #                                              target_arr_pt,
+            #                                              len(target),
+            #                                              syn_group,
+            #                                              ctypes.byref(n_conn))
+            ng_kernel.llapi_getGroupGroupConnections(source, len(source),
+                                                        target, len(target),
+                                                        syn_group)
 
-    conn_list = []
-    for i_conn in range(n_conn.value):
-        conn_id = ConnectionId(conn_arr[i_conn*3], conn_arr[i_conn*3 + 1],
-                   conn_arr[i_conn*3 + 2])
-        conn_list.append(conn_id)
-        
-    ret = conn_list
+    #conn_list = []
+    #for i_conn in range(n_conn.value):
+    #    conn_id = ConnectionId(conn_arr[i_conn*3], conn_arr[i_conn*3 + 1],
+    #               conn_arr[i_conn*3 + 2])
+    #    conn_list.append(conn_id)
+
+    #ret = conn_list
 
     if GetErrorCode() != 0:
         raise ValueError(GetErrorMessage())
