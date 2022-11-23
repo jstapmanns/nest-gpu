@@ -94,23 +94,23 @@ def waitenter(val):
         return input(val)
     else:
         return raw_input(val)
-    
+
 conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
                   "fixed_indegree", "fixed_outdegree")
-    
-NESTGPU_GetErrorMessage = _nestgpu.NESTGPU_GetErrorMessage
-NESTGPU_GetErrorMessage.restype = ctypes.POINTER(ctypes.c_char)
-def GetErrorMessage():
-    "Get error message from NESTGPU exception"
-    message = ctypes.cast(NESTGPU_GetErrorMessage(), ctypes.c_char_p).value
-    return message
- 
-NESTGPU_GetErrorCode = _nestgpu.NESTGPU_GetErrorCode
-NESTGPU_GetErrorCode.restype = ctypes.c_ubyte
-def GetErrorCode():
-    "Get error code from NESTGPU exception"
-    return NESTGPU_GetErrorCode()
- 
+
+#NESTGPU_GetErrorMessage = _nestgpu.NESTGPU_GetErrorMessage
+#NESTGPU_GetErrorMessage.restype = ctypes.POINTER(ctypes.c_char)
+#def GetErrorMessage():
+#    "Get error message from NESTGPU exception"
+#    message = ctypes.cast(NESTGPU_GetErrorMessage(), ctypes.c_char_p).value
+#    return message
+#
+#NESTGPU_GetErrorCode = _nestgpu.NESTGPU_GetErrorCode
+#NESTGPU_GetErrorCode.restype = ctypes.c_ubyte
+#def GetErrorCode():
+#    "Get error code from NESTGPU exception"
+#    return NESTGPU_GetErrorCode()
+
 NESTGPU_SetOnException = _nestgpu.NESTGPU_SetOnException
 NESTGPU_SetOnException.argtypes = (ctypes.c_int,)
 def SetOnException(on_exception):
@@ -125,8 +125,8 @@ NESTGPU_SetRandomSeed.restype = ctypes.c_int
 def SetRandomSeed(seed):
     "Set seed for random number generation"
     ret = NESTGPU_SetRandomSeed(ctypes.c_ulonglong(seed))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -136,8 +136,8 @@ NESTGPU_SetTimeResolution.restype = ctypes.c_int
 def SetTimeResolution(time_res):
     "Set time resolution in ms"
     ret = NESTGPU_SetTimeResolution(ctypes.c_float(time_res))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetTimeResolution = _nestgpu.NESTGPU_GetTimeResolution
@@ -145,8 +145,8 @@ NESTGPU_GetTimeResolution.restype = ctypes.c_float
 def GetTimeResolution():
     "Get time resolution in ms"
     ret = NESTGPU_GetTimeResolution()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -156,8 +156,8 @@ NESTGPU_SetMaxSpikeBufferSize.restype = ctypes.c_int
 def SetMaxSpikeBufferSize(max_size):
     "Set maximum size of spike buffer per node"
     ret = NESTGPU_SetMaxSpikeBufferSize(ctypes.c_int(max_size))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -166,8 +166,8 @@ NESTGPU_GetMaxSpikeBufferSize.restype = ctypes.c_int
 def GetMaxSpikeBufferSize():
     "Get maximum size of spike buffer per node"
     ret = NESTGPU_GetMaxSpikeBufferSize()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -177,8 +177,8 @@ NESTGPU_SetSimTime.restype = ctypes.c_int
 def SetSimTime(sim_time):
     "Set neural activity simulated time in ms"
     ret = NESTGPU_SetSimTime(ctypes.c_float(sim_time))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -188,8 +188,8 @@ NESTGPU_SetVerbosityLevel.restype = ctypes.c_int
 def SetVerbosityLevel(verbosity_level):
     "Set verbosity level"
     ret = NESTGPU_SetVerbosityLevel(ctypes.c_int(verbosity_level))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -210,8 +210,8 @@ def Create(model_name, n_node=1, n_ports=1, status_dict=None):
     #i_node =NESTGPU_Create(c_model_name, ctypes.c_int(n_node), ctypes.c_int(n_ports))
     i_node = ng_kernel.llapi_create(model_name, n_node, n_ports)
     ret = NodeSeq(i_node, n_node)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -222,8 +222,8 @@ def CreatePoissonGenerator(n_node, rate):
     "Create a poisson-distributed spike generator"
     i_node = NESTGPU_CreatePoissonGenerator(ctypes.c_int(n_node), ctypes.c_float(rate)) 
     ret = NodeSeq(i_node, n_node)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -246,8 +246,8 @@ def CreateRecord(file_name, var_name_list, i_node_list, i_port_list):
                                  array_int_type(*i_node_list),
                                  array_int_type(*i_port_list),
                                  ctypes.c_int(n_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -257,8 +257,8 @@ NESTGPU_GetRecordDataRows.restype = ctypes.c_int
 def GetRecordDataRows(i_record):
     "Get record n. of rows"
     ret = NESTGPU_GetRecordDataRows(ctypes.c_int(i_record))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -268,8 +268,8 @@ NESTGPU_GetRecordDataColumns.restype = ctypes.c_int
 def GetRecordDataColumns(i_record):
     "Get record n. of columns"
     ret = NESTGPU_GetRecordDataColumns(ctypes.c_int(i_record))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -290,8 +290,8 @@ def GetRecordData(i_record):
         data_list.append(row_list)
         
     ret = data_list    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -305,8 +305,8 @@ def SetNeuronScalParam(i_node, n_node, param_name, val):
     ret = NESTGPU_SetNeuronScalParam(ctypes.c_int(i_node),
                                        ctypes.c_int(n_node), c_param_name,
                                        ctypes.c_float(val)) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -323,8 +323,8 @@ def SetNeuronArrayParam(i_node, n_node, param_name, param_list):
                                        ctypes.c_int(n_node), c_param_name,
                                        array_float_type(*param_list),
                                        ctypes.c_int(array_size))  
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -341,8 +341,8 @@ def SetNeuronPtScalParam(nodes, param_name, val):
     ret = NESTGPU_SetNeuronPtScalParam(node_pt,
                                          ctypes.c_int(n_node), c_param_name,
                                          ctypes.c_float(val)) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -365,8 +365,8 @@ def SetNeuronPtArrayParam(nodes, param_name, param_list):
                                           c_param_name,
                                           array_float_type(*param_list),
                                           ctypes.c_int(array_size))  
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -378,8 +378,8 @@ def IsNeuronScalParam(i_node, param_name):
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
                                                len(param_name)+1)
     ret = (NESTGPU_IsNeuronScalParam(ctypes.c_int(i_node), c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -390,8 +390,8 @@ def IsNeuronPortParam(i_node, param_name):
     "Check name of neuron scalar parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = (NESTGPU_IsNeuronPortParam(ctypes.c_int(i_node), c_param_name)!= 0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_IsNeuronArrayParam = _nestgpu.NESTGPU_IsNeuronArrayParam
@@ -401,8 +401,8 @@ def IsNeuronArrayParam(i_node, param_name):
     "Check name of neuron scalar parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = (NESTGPU_IsNeuronArrayParam(ctypes.c_int(i_node), c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_IsNeuronGroupParam = _nestgpu.NESTGPU_IsNeuronGroupParam
@@ -413,8 +413,8 @@ def IsNeuronGroupParam(i_node, param_name):
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
                                                len(param_name)+1)
     ret = (NESTGPU_IsNeuronGroupParam(ctypes.c_int(i_node), c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -428,8 +428,8 @@ def SetNeuronIntVar(i_node, n_node, var_name, val):
     ret = NESTGPU_SetNeuronIntVar(ctypes.c_int(i_node),
                                        ctypes.c_int(n_node), c_var_name,
                                        ctypes.c_int(val)) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -443,8 +443,8 @@ def SetNeuronScalVar(i_node, n_node, var_name, val):
     ret = NESTGPU_SetNeuronScalVar(ctypes.c_int(i_node),
                                        ctypes.c_int(n_node), c_var_name,
                                        ctypes.c_float(val)) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -461,8 +461,8 @@ def SetNeuronArrayVar(i_node, n_node, var_name, var_list):
                                        ctypes.c_int(n_node), c_var_name,
                                        array_float_type(*var_list),
                                        ctypes.c_int(array_size))  
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -480,8 +480,8 @@ def SetNeuronPtIntVar(nodes, var_name, val):
     ret = NESTGPU_SetNeuronPtIntVar(node_pt,
                                        ctypes.c_int(n_node), c_var_name,
                                        ctypes.c_int(val)) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -499,8 +499,8 @@ def SetNeuronPtScalVar(nodes, var_name, val):
     ret = NESTGPU_SetNeuronPtScalVar(node_pt,
                                        ctypes.c_int(n_node), c_var_name,
                                        ctypes.c_float(val)) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -524,8 +524,8 @@ def SetNeuronPtArrayVar(nodes, var_name, var_list):
                                         c_var_name,
                                         array_float_type(*var_list),
                                         ctypes.c_int(array_size))  
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -537,8 +537,8 @@ def IsNeuronIntVar(i_node, var_name):
     c_var_name = ctypes.create_string_buffer(to_byte_str(var_name),
                                                len(var_name)+1)
     ret = (NESTGPU_IsNeuronIntVar(ctypes.c_int(i_node), c_var_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -550,8 +550,8 @@ def IsNeuronScalVar(i_node, var_name):
     c_var_name = ctypes.create_string_buffer(to_byte_str(var_name),
                                                len(var_name)+1)
     ret = (NESTGPU_IsNeuronScalVar(ctypes.c_int(i_node), c_var_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -562,8 +562,8 @@ def IsNeuronPortVar(i_node, var_name):
     "Check name of neuron scalar variable"
     c_var_name = ctypes.create_string_buffer(to_byte_str(var_name), len(var_name)+1)
     ret = (NESTGPU_IsNeuronPortVar(ctypes.c_int(i_node), c_var_name)!= 0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_IsNeuronArrayVar = _nestgpu.NESTGPU_IsNeuronArrayVar
@@ -573,8 +573,8 @@ def IsNeuronArrayVar(i_node, var_name):
     "Check name of neuron array variable"
     c_var_name = ctypes.create_string_buffer(to_byte_str(var_name), len(var_name)+1)
     ret = (NESTGPU_IsNeuronArrayVar(ctypes.c_int(i_node), c_var_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -585,8 +585,8 @@ def GetNeuronParamSize(i_node, param_name):
     "Get neuron parameter array size"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = NESTGPU_GetNeuronParamSize(ctypes.c_int(i_node), c_param_name) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -614,8 +614,8 @@ def GetNeuronParam(i_node, n_node, param_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -646,8 +646,8 @@ def GetNeuronPtParam(nodes, param_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetArrayParam = _nestgpu.NESTGPU_GetArrayParam
@@ -669,8 +669,8 @@ def GetArrayParam(i_node, n_node, param_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 def GetNeuronListArrayParam(node_list, param_name):
@@ -688,8 +688,8 @@ def GetNeuronListArrayParam(node_list, param_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -701,8 +701,8 @@ def GetNeuronGroupParam(i_node, param_name):
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
                                                len(param_name)+1)
     ret = NESTGPU_GetNeuronGroupParam(ctypes.c_int(i_node), c_param_name)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -715,8 +715,8 @@ def GetNeuronVarSize(i_node, var_name):
     "Get neuron variable array size"
     c_var_name = ctypes.create_string_buffer(to_byte_str(var_name), len(var_name)+1)
     ret = NESTGPU_GetNeuronVarSize(ctypes.c_int(i_node), c_var_name)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -737,8 +737,8 @@ def GetNeuronIntVar(i_node, n_node, var_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -767,8 +767,8 @@ def GetNeuronVar(i_node, n_node, var_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -791,8 +791,8 @@ def GetNeuronPtIntVar(nodes, var_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetNeuronPtVar = _nestgpu.NESTGPU_GetNeuronPtVar
@@ -823,8 +823,8 @@ def GetNeuronPtVar(nodes, var_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetArrayVar = _nestgpu.NESTGPU_GetArrayVar
@@ -846,8 +846,8 @@ def GetArrayVar(i_node, n_node, var_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -866,8 +866,8 @@ def GetNeuronListArrayVar(node_list, var_name):
         
     ret = data_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 def GetNeuronStatus(nodes, var_name):
@@ -922,8 +922,8 @@ NESTGPU_GetNIntVar.restype = ctypes.c_int
 def GetNIntVar(i_node):
     "Get number of integer variables for a given node"
     ret = NESTGPU_GetNIntVar(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetNScalVar = _nestgpu.NESTGPU_GetNScalVar
@@ -932,8 +932,8 @@ NESTGPU_GetNScalVar.restype = ctypes.c_int
 def GetNScalVar(i_node):
     "Get number of scalar variables for a given node"
     ret = NESTGPU_GetNScalVar(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetIntVarNames = _nestgpu.NESTGPU_GetIntVarNames
@@ -949,8 +949,8 @@ def GetIntVarNames(i_node):
         var_name_p = var_name_pp[i]
         var_name = ctypes.cast(var_name_p, ctypes.c_char_p).value
         var_name_list.append(to_def_str(var_name))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return var_name_list
 
 NESTGPU_GetScalVarNames = _nestgpu.NESTGPU_GetScalVarNames
@@ -966,8 +966,8 @@ def GetScalVarNames(i_node):
         var_name_p = var_name_pp[i]
         var_name = ctypes.cast(var_name_p, ctypes.c_char_p).value
         var_name_list.append(to_def_str(var_name))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return var_name_list
 
 NESTGPU_GetNPortVar = _nestgpu.NESTGPU_GetNPortVar
@@ -976,8 +976,8 @@ NESTGPU_GetNPortVar.restype = ctypes.c_int
 def GetNPortVar(i_node):
     "Get number of scalar variables for a given node"
     ret = NESTGPU_GetNPortVar(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetPortVarNames = _nestgpu.NESTGPU_GetPortVarNames
@@ -994,8 +994,8 @@ def GetPortVarNames(i_node):
         var_name = ctypes.cast(var_name_p, ctypes.c_char_p).value
         var_name_list.append(to_def_str(var_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return var_name_list
 
 
@@ -1005,8 +1005,8 @@ NESTGPU_GetNScalParam.restype = ctypes.c_int
 def GetNScalParam(i_node):
     "Get number of scalar parameters for a given node"
     ret = NESTGPU_GetNScalParam(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetScalParamNames = _nestgpu.NESTGPU_GetScalParamNames
@@ -1023,8 +1023,8 @@ def GetScalParamNames(i_node):
         param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
         param_name_list.append(to_def_str(param_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return param_name_list
 
 NESTGPU_GetNPortParam = _nestgpu.NESTGPU_GetNPortParam
@@ -1033,8 +1033,8 @@ NESTGPU_GetNPortParam.restype = ctypes.c_int
 def GetNPortParam(i_node):
     "Get number of scalar parameters for a given node"
     ret = NESTGPU_GetNPortParam(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetPortParamNames = _nestgpu.NESTGPU_GetPortParamNames
@@ -1051,8 +1051,8 @@ def GetPortParamNames(i_node):
         param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
         param_name_list.append(to_def_str(param_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return param_name_list
 
 
@@ -1062,8 +1062,8 @@ NESTGPU_GetNArrayParam.restype = ctypes.c_int
 def GetNArrayParam(i_node):
     "Get number of scalar parameters for a given node"
     ret = NESTGPU_GetNArrayParam(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetArrayParamNames = _nestgpu.NESTGPU_GetArrayParamNames
@@ -1080,8 +1080,8 @@ def GetArrayParamNames(i_node):
         param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
         param_name_list.append(to_def_str(param_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return param_name_list
 
 
@@ -1091,8 +1091,8 @@ NESTGPU_GetNGroupParam.restype = ctypes.c_int
 def GetNGroupParam(i_node):
     "Get number of scalar parameters for a given node"
     ret = NESTGPU_GetNGroupParam(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetGroupParamNames = _nestgpu.NESTGPU_GetGroupParamNames
@@ -1109,8 +1109,8 @@ def GetGroupParamNames(i_node):
         param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
         param_name_list.append(to_def_str(param_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return param_name_list
 
 NESTGPU_GetNArrayVar = _nestgpu.NESTGPU_GetNArrayVar
@@ -1119,8 +1119,8 @@ NESTGPU_GetNArrayVar.restype = ctypes.c_int
 def GetNArrayVar(i_node):
     "Get number of scalar variables for a given node"
     ret = NESTGPU_GetNArrayVar(ctypes.c_int(i_node))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetArrayVarNames = _nestgpu.NESTGPU_GetArrayVarNames
@@ -1137,8 +1137,8 @@ def GetArrayVarNames(i_node):
         var_name = ctypes.cast(var_name_p, ctypes.c_char_p).value
         var_name_list.append(to_def_str(var_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return var_name_list
 
 
@@ -1196,8 +1196,8 @@ NESTGPU_Calibrate.restype = ctypes.c_int
 def Calibrate():
     "Calibrate simulation"
     ret = NESTGPU_Calibrate()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1207,8 +1207,8 @@ def Simulate(sim_time=1000.0):
     "Simulate neural activity"
     SetSimTime(sim_time)
     ret = NESTGPU_Simulate()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1223,34 +1223,34 @@ def ConnectMpiInit():
     c_var_name_list=[]
     for i in range(argc):
         c_arg = ctypes.create_string_buffer(to_byte_str(sys.argv[i]), 100)
-        c_var_name_list.append(c_arg)        
+        c_var_name_list.append(c_arg)
     ret = NESTGPU_ConnectMpiInit(ctypes.c_int(argc),
                                    array_char_pt_type(*c_var_name_list))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
-NESTGPU_MpiId = _nestgpu.NESTGPU_MpiId
-NESTGPU_MpiId.restype = ctypes.c_int
-def MpiId():
-    "Get MPI Id"
-    ret = NESTGPU_MpiId()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-def Rank():
-    "Get MPI rank"
-    return MpiId()
+#NESTGPU_MpiId = _nestgpu.NESTGPU_MpiId
+#NESTGPU_MpiId.restype = ctypes.c_int
+#def MpiId():
+#    "Get MPI Id"
+#    ret = NESTGPU_MpiId()
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#def Rank():
+#    "Get MPI rank"
+#    return MpiId()
 
 NESTGPU_MpiNp = _nestgpu.NESTGPU_MpiNp
 NESTGPU_MpiNp.restype = ctypes.c_int
 def MpiNp():
     "Get MPI Np"
     ret = NESTGPU_MpiNp()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1259,8 +1259,8 @@ NESTGPU_ProcMaster.restype = ctypes.c_int
 def ProcMaster():
     "Get MPI ProcMaster"
     ret = NESTGPU_ProcMaster()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1269,8 +1269,8 @@ NESTGPU_MpiFinalize.restype = ctypes.c_int
 def MpiFinalize():
     "Finalize MPI"
     ret = NESTGPU_MpiFinalize()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1280,8 +1280,8 @@ NESTGPU_RandomInt.restype = ctypes.POINTER(ctypes.c_uint)
 def RandomInt(n):
     "Generate n random integers in CUDA memory"
     ret = NESTGPU_RandomInt(ctypes.c_size_t(n))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1291,8 +1291,8 @@ NESTGPU_RandomUniform.restype = c_float_p
 def RandomUniform(n):
     "Generate n random floats with uniform distribution in (0,1) in CUDA memory"
     ret = NESTGPU_RandomUniform(ctypes.c_size_t(n))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1303,8 +1303,8 @@ def RandomNormal(n, mean, stddev):
     "Generate n random floats with normal distribution in CUDA memory"
     ret = NESTGPU_RandomNormal(ctypes.c_size_t(n), ctypes.c_float(mean),
                                  ctypes.c_float(stddev))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1320,8 +1320,8 @@ def RandomNormalClipped(n, mean, stddev, vmin, vmax, vstep=0):
                                         ctypes.c_float(vmin),
                                         ctypes.c_float(vmax),
                                         ctypes.c_float(vstep))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1339,8 +1339,8 @@ def ConnectMpiInit():
         c_var_name_list.append(c_arg)        
     ret = NESTGPU_ConnectMpiInit(ctypes.c_int(argc),
                                    array_char_pt_type(*c_var_name_list))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1353,8 +1353,8 @@ def SingleConnect(i_source_node, i_target_node, i_port, weight, delay):
                             ctypes.c_int(i_target_node),
                             ctypes.c_ubyte(i_port), ctypes.c_float(weight),
                             ctypes.c_float(delay))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1363,8 +1363,8 @@ NESTGPU_ConnSpecInit.restype = ctypes.c_int
 def ConnSpecInit():
     "Initialize connection rules specification"
     ret = NESTGPU_ConnSpecInit()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1375,8 +1375,8 @@ def SetConnSpecParam(param_name, val):
     "Set connection parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = NESTGPU_SetConnSpecParam(c_param_name, ctypes.c_int(val))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1387,8 +1387,8 @@ def ConnSpecIsParam(param_name):
     "Check name of connection parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = (NESTGPU_ConnSpecIsParam(c_param_name) != 0)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1397,8 +1397,8 @@ NESTGPU_SynSpecInit.restype = ctypes.c_int
 def SynSpecInit():
     "Initializa synapse specification"
     ret = NESTGPU_SynSpecInit()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_SetSynSpecIntParam = _nestgpu.NESTGPU_SetSynSpecIntParam
@@ -1408,8 +1408,8 @@ def SetSynSpecIntParam(param_name, val):
     "Set synapse int parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = NESTGPU_SetSynSpecIntParam(c_param_name, ctypes.c_int(val))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_SetSynSpecFloatParam = _nestgpu.NESTGPU_SetSynSpecFloatParam
@@ -1419,8 +1419,8 @@ def SetSynSpecFloatParam(param_name, val):
     "Set synapse float parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = NESTGPU_SetSynSpecFloatParam(c_param_name, ctypes.c_float(val))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_SetSynSpecFloatPtParam = _nestgpu.NESTGPU_SetSynSpecFloatPtParam
@@ -1433,8 +1433,8 @@ def SetSynSpecFloatPtParam(param_name, arr):
         arr = (ctypes.c_float * len(arr))(*arr)
     arr_pt = ctypes.cast(arr, ctypes.c_void_p)
     ret = NESTGPU_SetSynSpecFloatPtParam(c_param_name, arr_pt)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1445,8 +1445,8 @@ def SynSpecIsIntParam(param_name):
     "Check name of synapse int parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = (NESTGPU_SynSpecIsIntParam(c_param_name) != 0)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1457,8 +1457,8 @@ def SynSpecIsFloatParam(param_name):
     "Check name of synapse float parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = (NESTGPU_SynSpecIsFloatParam(c_param_name) != 0)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1469,8 +1469,8 @@ def SynSpecIsFloatPtParam(param_name):
     "Check name of synapse pointer to float parameter"
     c_param_name = ctypes.create_string_buffer(to_byte_str(param_name), len(param_name)+1)
     ret = (NESTGPU_SynSpecIsFloatPtParam(c_param_name) != 0)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1635,8 +1635,8 @@ def Connect(source, target, conn_dict, syn_dict):
             #                                  target_arr_pt, len(target))
             ret = ng_kernel.llapi_connectGroupGroup(source, len(source),
                                               target, len(target))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     gc.enable()
     return ret
 
@@ -1735,8 +1735,8 @@ def RemoteConnect(i_source_host, source, i_target_host, target,
                                                     i_target_host,
                                                     target_arr_pt,
                                                     len(target))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -1744,16 +1744,16 @@ def SetStatus(gen_object, params, val=None):
     "Set neuron or synapse group parameters or variables using dictionaries"
 
     if type(gen_object)==RemoteNodeSeq:
-        if gen_object.i_host==MpiId():
+        if gen_object.i_host==ng_kernel.llapi_mpiId():
             SetStatus(gen_object.node_seq, params, val)
         return
-    
+
     gc.disable()
     if type(gen_object)==SynGroup:
         ret = SetSynGroupStatus(gen_object, params, val)
         gc.enable()
         return ret
-    nodes = gen_object    
+    nodes = gen_object
     if val != None:
          SetNeuronStatus(nodes, params, val)
     elif type(params)==dict:
@@ -1769,35 +1769,35 @@ def SetStatus(gen_object, params, val=None):
                 SetNeuronStatus(nodes, param_name, param_dict[param_name])
     else:
         raise ValueError("Wrong argument in SetStatus")
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     gc.enable()
 
 #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-NESTGPU_GetSeqSeqConnections = _nestgpu.NESTGPU_GetSeqSeqConnections
-NESTGPU_GetSeqSeqConnections.argtypes = (ctypes.c_int, ctypes.c_int,
-                                           ctypes.c_int, ctypes.c_int,
-                                           ctypes.c_int, c_int_p)
-NESTGPU_GetSeqSeqConnections.restype = c_int_p
-
-NESTGPU_GetSeqGroupConnections = _nestgpu.NESTGPU_GetSeqGroupConnections
-NESTGPU_GetSeqGroupConnections.argtypes = (ctypes.c_int, ctypes.c_int,
-                                             c_void_p, ctypes.c_int,
-                                             ctypes.c_int, c_int_p)
-NESTGPU_GetSeqGroupConnections.restype = c_int_p
-
-NESTGPU_GetGroupSeqConnections = _nestgpu.NESTGPU_GetGroupSeqConnections
-NESTGPU_GetGroupSeqConnections.argtypes = (c_void_p, ctypes.c_int,
-                                             ctypes.c_int, ctypes.c_int,
-                                             ctypes.c_int, c_int_p)
-NESTGPU_GetGroupSeqConnections.restype = c_int_p
-
-NESTGPU_GetGroupGroupConnections = _nestgpu.NESTGPU_GetGroupGroupConnections
-NESTGPU_GetGroupGroupConnections.argtypes = (c_void_p, ctypes.c_int,
-                                               c_void_p, ctypes.c_int,
-                                               ctypes.c_int, c_int_p)
-NESTGPU_GetGroupGroupConnections.restype = c_int_p
+#NESTGPU_GetSeqSeqConnections = _nestgpu.NESTGPU_GetSeqSeqConnections
+#NESTGPU_GetSeqSeqConnections.argtypes = (ctypes.c_int, ctypes.c_int,
+#                                           ctypes.c_int, ctypes.c_int,
+#                                           ctypes.c_int, c_int_p)
+#NESTGPU_GetSeqSeqConnections.restype = c_int_p
+#
+#NESTGPU_GetSeqGroupConnections = _nestgpu.NESTGPU_GetSeqGroupConnections
+#NESTGPU_GetSeqGroupConnections.argtypes = (ctypes.c_int, ctypes.c_int,
+#                                             c_void_p, ctypes.c_int,
+#                                             ctypes.c_int, c_int_p)
+#NESTGPU_GetSeqGroupConnections.restype = c_int_p
+#
+#NESTGPU_GetGroupSeqConnections = _nestgpu.NESTGPU_GetGroupSeqConnections
+#NESTGPU_GetGroupSeqConnections.argtypes = (c_void_p, ctypes.c_int,
+#                                             ctypes.c_int, ctypes.c_int,
+#                                             ctypes.c_int, c_int_p)
+#NESTGPU_GetGroupSeqConnections.restype = c_int_p
+#
+#NESTGPU_GetGroupGroupConnections = _nestgpu.NESTGPU_GetGroupGroupConnections
+#NESTGPU_GetGroupGroupConnections.argtypes = (c_void_p, ctypes.c_int,
+#                                               c_void_p, ctypes.c_int,
+#                                               ctypes.c_int, c_int_p)
+#NESTGPU_GetGroupGroupConnections.restype = c_int_p
 
 def GetConnections(source=None, target=None, syn_group=-1):
     "Get connections between two node groups"
@@ -1820,23 +1820,23 @@ def GetConnections(source=None, target=None, syn_group=-1):
         #                                          target.i0, target.n,
         #                                          syn_group,
         #                                          ctypes.byref(n_conn))
-        ng_kernel.llapi_getSeqSeqConnections(source.i0, source.n,
+        ret = ng_kernel.llapi_getSeqSeqConnections(source.i0, source.n,
                                                   target.i0, target.n,
                                                   syn_group)
     else:
-        if type(source)!=NodeSeq:
-            source_arr = (ctypes.c_int * len(source))(*source)
-            source_arr_pt = ctypes.cast(source_arr, ctypes.c_void_p)
-        if type(target)!=NodeSeq:
-            target_arr = (ctypes.c_int * len(target))(*target)
-            target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)
+        #if type(source)!=NodeSeq:
+        #    source_arr = (ctypes.c_int * len(source))(*source)
+        #    source_arr_pt = ctypes.cast(source_arr, ctypes.c_void_p)
+        #if type(target)!=NodeSeq:
+        #    target_arr = (ctypes.c_int * len(target))(*target)
+        #    target_arr_pt = ctypes.cast(target_arr, ctypes.c_void_p)
         if (type(source)==NodeSeq) & (type(target)!=NodeSeq):
             #conn_arr = NESTGPU_GetSeqGroupConnections(source.i0, source.n,
             #                                            target_arr_pt,
             #                                            len(target),
             #                                            syn_group,
             #                                            ctypes.byref(n_conn))
-            ng_kernel.llapi_getSeqGroupConnections(source.i0, source.n,
+            ret = ng_kernel.llapi_getSeqGroupConnections(source.i0, source.n,
                                                         target,
                                                         len(target),
                                                         syn_group)
@@ -1856,7 +1856,7 @@ def GetConnections(source=None, target=None, syn_group=-1):
             #                                              len(target),
             #                                              syn_group,
             #                                              ctypes.byref(n_conn))
-            ng_kernel.llapi_getGroupGroupConnections(source, len(source),
+            ret = ng_kernel.llapi_getGroupGroupConnections(source, len(source),
                                                         target, len(target),
                                                         syn_group)
 
@@ -1868,8 +1868,8 @@ def GetConnections(source=None, target=None, syn_group=-1):
 
     #ret = conn_list
 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
  
@@ -1975,8 +1975,8 @@ def CreateSynGroup(model_name, status_dict=None):
     c_model_name = ctypes.create_string_buffer(to_byte_str(model_name), \
                                                len(model_name)+1)
     i_syn_group = NESTGPU_CreateSynGroup(c_model_name) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return SynGroup(i_syn_group)
 
   
@@ -1990,8 +1990,8 @@ def GetSynGroupNParam(syn_group):
     i_syn_group = syn_group.i_syn_group
     
     ret = NESTGPU_GetSynGroupNParam(ctypes.c_int(i_syn_group))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
   
@@ -2013,8 +2013,8 @@ def GetSynGroupParamNames(syn_group):
         param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
         param_name_list.append(to_def_str(param_name))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return param_name_list
 
 
@@ -2031,8 +2031,8 @@ def IsSynGroupParam(syn_group, param_name):
                                                len(param_name)+1)
     ret = (NESTGPU_IsSynGroupParam(ctypes.c_int(i_syn_group), \
                                      c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
     
@@ -2051,8 +2051,8 @@ def GetSynGroupParam(syn_group, param_name):
     ret = NESTGPU_GetSynGroupParam(ctypes.c_int(i_syn_group),
                                          c_param_name)
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
   
@@ -2071,8 +2071,8 @@ def SetSynGroupParam(syn_group, param_name, val):
     ret = NESTGPU_SetSynGroupParam(ctypes.c_int(i_syn_group),
                                          c_param_name, ctypes.c_float(val))
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 def GetSynGroupStatus(syn_group, var_key=None):
@@ -2105,11 +2105,11 @@ def SetSynGroupStatus(syn_group, params, val=None):
         for param_name in params:
             SetSynGroupStatus(syn_group, param_name, params[param_name])
     elif (type(params)==str):
-            return SetSynGroupParam(syn_group, params, val)        
+            return SetSynGroupParam(syn_group, params, val)
     else:
-        raise ValueError("Wrong argument in SetSynGroupStatus")       
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+        raise ValueError("Wrong argument in SetSynGroupStatus")
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
 
 
 NESTGPU_ActivateSpikeCount = _nestgpu.NESTGPU_ActivateSpikeCount
@@ -2123,8 +2123,8 @@ def ActivateSpikeCount(nodes):
     ret = NESTGPU_ActivateSpikeCount(ctypes.c_int(nodes.i0),
                                        ctypes.c_int(nodes.n))
 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -2141,8 +2141,8 @@ def ActivateRecSpikeTimes(nodes, max_n_rec_spike_times):
                                           ctypes.c_int(nodes.n),
                                           ctypes.c_int(max_n_rec_spike_times))
 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_SetRecSpikeTimesStep = _nestgpu.NESTGPU_SetRecSpikeTimesStep
@@ -2158,8 +2158,8 @@ def SetRecSpikeTimesStep(nodes, rec_spike_times_step):
                                        ctypes.c_int(nodes.n),
                                        ctypes.c_int(rec_spike_times_step))
 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -2171,8 +2171,8 @@ def GetNRecSpikeTimes(i_node):
 
     ret = NESTGPU_GetNRecSpikeTimes(ctypes.c_int(i_node))
 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 NESTGPU_GetRecSpikeTimes = _nestgpu.NESTGPU_GetRecSpikeTimes
@@ -2201,8 +2201,8 @@ def GetRecSpikeTimes(nodes):
         
     ret = spike_time_list
     
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
@@ -2220,233 +2220,233 @@ def SetNeuronGroupParam(nodes, param_name, val):
     ret = NESTGPU_SetNeuronGroupParam(ctypes.c_int(nodes.i0),
                                         ctypes.c_int(nodes.n),
                                         c_param_name, ctypes.c_float(val))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
-NESTGPU_GetNBoolParam = _nestgpu.NESTGPU_GetNBoolParam
-NESTGPU_GetNBoolParam.restype = ctypes.c_int
-def GetNBoolParam():
-    "Get number of kernel boolean parameters"
-    
-    ret = NESTGPU_GetNBoolParam()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-
-NESTGPU_GetBoolParamNames = _nestgpu.NESTGPU_GetBoolParamNames
-NESTGPU_GetBoolParamNames.restype = ctypes.POINTER(c_char_p)
-def GetBoolParamNames():
-    "Get list of kernel boolean parameter names"
-
-    n_param = GetNBoolParam()
-    param_name_pp = ctypes.cast(NESTGPU_GetBoolParamNames(),
-                                ctypes.POINTER(c_char_p))
-    param_name_list = []
-    for i in range(n_param):
-        param_name_p = param_name_pp[i]
-        param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
-        param_name_list.append(to_def_str(param_name))
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return param_name_list
-
-
-NESTGPU_IsBoolParam = _nestgpu.NESTGPU_IsBoolParam
-NESTGPU_IsBoolParam.argtypes = (c_char_p,)
-NESTGPU_IsBoolParam.restype = ctypes.c_int
-def IsBoolParam(param_name):
-    "Check name of kernel boolean parameter"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-    ret = (NESTGPU_IsBoolParam(c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-    
-NESTGPU_GetBoolParam = _nestgpu.NESTGPU_GetBoolParam
-NESTGPU_GetBoolParam.argtypes = (c_char_p,)
-NESTGPU_GetBoolParam.restype = ctypes.c_bool
-def GetBoolParam(param_name):
-    "Get kernel boolean parameter value"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-
-    ret = NESTGPU_GetBoolParam(c_param_name)
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-  
-NESTGPU_SetBoolParam = _nestgpu.NESTGPU_SetBoolParam
-NESTGPU_SetBoolParam.argtypes = (c_char_p, ctypes.c_bool)
-NESTGPU_SetBoolParam.restype = ctypes.c_int
-def SetBoolParam(param_name, val):
-    "Set kernel boolean parameter value"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-    ret = NESTGPU_SetBoolParam(c_param_name, ctypes.c_bool(val))
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-NESTGPU_GetNFloatParam = _nestgpu.NESTGPU_GetNFloatParam
-NESTGPU_GetNFloatParam.restype = ctypes.c_int
-def GetNFloatParam():
-    "Get number of kernel float parameters"
-    
-    ret = NESTGPU_GetNFloatParam()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-
-NESTGPU_GetFloatParamNames = _nestgpu.NESTGPU_GetFloatParamNames
-NESTGPU_GetFloatParamNames.restype = ctypes.POINTER(c_char_p)
-def GetFloatParamNames():
-    "Get list of kernel float parameter names"
-
-    n_param = GetNFloatParam()
-    param_name_pp = ctypes.cast(NESTGPU_GetFloatParamNames(),
-                                ctypes.POINTER(c_char_p))
-    param_name_list = []
-    for i in range(n_param):
-        param_name_p = param_name_pp[i]
-        param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
-        param_name_list.append(to_def_str(param_name))
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return param_name_list
-
-
-NESTGPU_IsFloatParam = _nestgpu.NESTGPU_IsFloatParam
-NESTGPU_IsFloatParam.argtypes = (c_char_p,)
-NESTGPU_IsFloatParam.restype = ctypes.c_int
-def IsFloatParam(param_name):
-    "Check name of kernel float parameter"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-    ret = (NESTGPU_IsFloatParam(c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-    
-NESTGPU_GetFloatParam = _nestgpu.NESTGPU_GetFloatParam
-NESTGPU_GetFloatParam.argtypes = (c_char_p,)
-NESTGPU_GetFloatParam.restype = ctypes.c_float
-def GetFloatParam(param_name):
-    "Get kernel float parameter value"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-
-    ret = NESTGPU_GetFloatParam(c_param_name)
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-  
-NESTGPU_SetFloatParam = _nestgpu.NESTGPU_SetFloatParam
-NESTGPU_SetFloatParam.argtypes = (c_char_p, ctypes.c_float)
-NESTGPU_SetFloatParam.restype = ctypes.c_int
-def SetFloatParam(param_name, val):
-    "Set kernel float parameter value"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-    ret = NESTGPU_SetFloatParam(c_param_name, ctypes.c_float(val))
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-
-NESTGPU_GetNIntParam = _nestgpu.NESTGPU_GetNIntParam
-NESTGPU_GetNIntParam.restype = ctypes.c_int
-def GetNIntParam():
-    "Get number of kernel int parameters"
-    
-    ret = NESTGPU_GetNIntParam()
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-
-NESTGPU_GetIntParamNames = _nestgpu.NESTGPU_GetIntParamNames
-NESTGPU_GetIntParamNames.restype = ctypes.POINTER(c_char_p)
-def GetIntParamNames():
-    "Get list of kernel int parameter names"
-
-    n_param = GetNIntParam()
-    param_name_pp = ctypes.cast(NESTGPU_GetIntParamNames(),
-                                ctypes.POINTER(c_char_p))
-    param_name_list = []
-    for i in range(n_param):
-        param_name_p = param_name_pp[i]
-        param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
-        param_name_list.append(to_def_str(param_name))
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return param_name_list
-
-
-NESTGPU_IsIntParam = _nestgpu.NESTGPU_IsIntParam
-NESTGPU_IsIntParam.argtypes = (c_char_p,)
-NESTGPU_IsIntParam.restype = ctypes.c_int
-def IsIntParam(param_name):
-    "Check name of kernel int parameter"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-    ret = (NESTGPU_IsIntParam(c_param_name)!=0) 
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-    
-NESTGPU_GetIntParam = _nestgpu.NESTGPU_GetIntParam
-NESTGPU_GetIntParam.argtypes = (c_char_p,)
-NESTGPU_GetIntParam.restype = ctypes.c_int
-def GetIntParam(param_name):
-    "Get kernel int parameter value"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-
-    ret = NESTGPU_GetIntParam(c_param_name)
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
-
-  
-NESTGPU_SetIntParam = _nestgpu.NESTGPU_SetIntParam
-NESTGPU_SetIntParam.argtypes = (c_char_p, ctypes.c_int)
-NESTGPU_SetIntParam.restype = ctypes.c_int
-def SetIntParam(param_name, val):
-    "Set kernel int parameter value"
-
-    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
-                                               len(param_name)+1)
-    ret = NESTGPU_SetIntParam(c_param_name, ctypes.c_int(val))
-    
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
-    return ret
+#NESTGPU_GetNBoolParam = _nestgpu.NESTGPU_GetNBoolParam
+#NESTGPU_GetNBoolParam.restype = ctypes.c_int
+#def GetNBoolParam():
+#    "Get number of kernel boolean parameters"
+#    
+#    ret = NESTGPU_GetNBoolParam()
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#
+#NESTGPU_GetBoolParamNames = _nestgpu.NESTGPU_GetBoolParamNames
+#NESTGPU_GetBoolParamNames.restype = ctypes.POINTER(c_char_p)
+#def GetBoolParamNames():
+#    "Get list of kernel boolean parameter names"
+#
+#    n_param = GetNBoolParam()
+#    param_name_pp = ctypes.cast(NESTGPU_GetBoolParamNames(),
+#                                ctypes.POINTER(c_char_p))
+#    param_name_list = []
+#    for i in range(n_param):
+#        param_name_p = param_name_pp[i]
+#        param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
+#        param_name_list.append(to_def_str(param_name))
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return param_name_list
+#
+#
+#NESTGPU_IsBoolParam = _nestgpu.NESTGPU_IsBoolParam
+#NESTGPU_IsBoolParam.argtypes = (c_char_p,)
+#NESTGPU_IsBoolParam.restype = ctypes.c_int
+#def IsBoolParam(param_name):
+#    "Check name of kernel boolean parameter"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#    ret = (NESTGPU_IsBoolParam(c_param_name)!=0) 
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#    
+#NESTGPU_GetBoolParam = _nestgpu.NESTGPU_GetBoolParam
+#NESTGPU_GetBoolParam.argtypes = (c_char_p,)
+#NESTGPU_GetBoolParam.restype = ctypes.c_bool
+#def GetBoolParam(param_name):
+#    "Get kernel boolean parameter value"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#
+#    ret = NESTGPU_GetBoolParam(c_param_name)
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#  
+#NESTGPU_SetBoolParam = _nestgpu.NESTGPU_SetBoolParam
+#NESTGPU_SetBoolParam.argtypes = (c_char_p, ctypes.c_bool)
+#NESTGPU_SetBoolParam.restype = ctypes.c_int
+#def SetBoolParam(param_name, val):
+#    "Set kernel boolean parameter value"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#    ret = NESTGPU_SetBoolParam(c_param_name, ctypes.c_bool(val))
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#NESTGPU_GetNFloatParam = _nestgpu.NESTGPU_GetNFloatParam
+#NESTGPU_GetNFloatParam.restype = ctypes.c_int
+#def GetNFloatParam():
+#    "Get number of kernel float parameters"
+#    
+#    ret = NESTGPU_GetNFloatParam()
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#
+#NESTGPU_GetFloatParamNames = _nestgpu.NESTGPU_GetFloatParamNames
+#NESTGPU_GetFloatParamNames.restype = ctypes.POINTER(c_char_p)
+#def GetFloatParamNames():
+#    "Get list of kernel float parameter names"
+#
+#    n_param = GetNFloatParam()
+#    param_name_pp = ctypes.cast(NESTGPU_GetFloatParamNames(),
+#                                ctypes.POINTER(c_char_p))
+#    param_name_list = []
+#    for i in range(n_param):
+#        param_name_p = param_name_pp[i]
+#        param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
+#        param_name_list.append(to_def_str(param_name))
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return param_name_list
+#
+#
+#NESTGPU_IsFloatParam = _nestgpu.NESTGPU_IsFloatParam
+#NESTGPU_IsFloatParam.argtypes = (c_char_p,)
+#NESTGPU_IsFloatParam.restype = ctypes.c_int
+#def IsFloatParam(param_name):
+#    "Check name of kernel float parameter"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#    ret = (NESTGPU_IsFloatParam(c_param_name)!=0) 
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#    
+#NESTGPU_GetFloatParam = _nestgpu.NESTGPU_GetFloatParam
+#NESTGPU_GetFloatParam.argtypes = (c_char_p,)
+#NESTGPU_GetFloatParam.restype = ctypes.c_float
+#def GetFloatParam(param_name):
+#    "Get kernel float parameter value"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#
+#    ret = NESTGPU_GetFloatParam(c_param_name)
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#  
+#NESTGPU_SetFloatParam = _nestgpu.NESTGPU_SetFloatParam
+#NESTGPU_SetFloatParam.argtypes = (c_char_p, ctypes.c_float)
+#NESTGPU_SetFloatParam.restype = ctypes.c_int
+#def SetFloatParam(param_name, val):
+#    "Set kernel float parameter value"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#    ret = NESTGPU_SetFloatParam(c_param_name, ctypes.c_float(val))
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#
+#NESTGPU_GetNIntParam = _nestgpu.NESTGPU_GetNIntParam
+#NESTGPU_GetNIntParam.restype = ctypes.c_int
+#def GetNIntParam():
+#    "Get number of kernel int parameters"
+#    
+#    ret = NESTGPU_GetNIntParam()
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#
+#NESTGPU_GetIntParamNames = _nestgpu.NESTGPU_GetIntParamNames
+#NESTGPU_GetIntParamNames.restype = ctypes.POINTER(c_char_p)
+#def GetIntParamNames():
+#    "Get list of kernel int parameter names"
+#
+#    n_param = GetNIntParam()
+#    param_name_pp = ctypes.cast(NESTGPU_GetIntParamNames(),
+#                                ctypes.POINTER(c_char_p))
+#    param_name_list = []
+#    for i in range(n_param):
+#        param_name_p = param_name_pp[i]
+#        param_name = ctypes.cast(param_name_p, ctypes.c_char_p).value
+#        param_name_list.append(to_def_str(param_name))
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return param_name_list
+#
+#
+#NESTGPU_IsIntParam = _nestgpu.NESTGPU_IsIntParam
+#NESTGPU_IsIntParam.argtypes = (c_char_p,)
+#NESTGPU_IsIntParam.restype = ctypes.c_int
+#def IsIntParam(param_name):
+#    "Check name of kernel int parameter"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#    ret = (NESTGPU_IsIntParam(c_param_name)!=0) 
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#    
+#NESTGPU_GetIntParam = _nestgpu.NESTGPU_GetIntParam
+#NESTGPU_GetIntParam.argtypes = (c_char_p,)
+#NESTGPU_GetIntParam.restype = ctypes.c_int
+#def GetIntParam(param_name):
+#    "Get kernel int parameter value"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#
+#    ret = NESTGPU_GetIntParam(c_param_name)
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
+#
+#  
+#NESTGPU_SetIntParam = _nestgpu.NESTGPU_SetIntParam
+#NESTGPU_SetIntParam.argtypes = (c_char_p, ctypes.c_int)
+#NESTGPU_SetIntParam.restype = ctypes.c_int
+#def SetIntParam(param_name, val):
+#    "Set kernel int parameter value"
+#
+#    c_param_name = ctypes.create_string_buffer(to_byte_str(param_name),
+#                                               len(param_name)+1)
+#    ret = NESTGPU_SetIntParam(c_param_name, ctypes.c_int(val))
+#    
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
 
 def GetKernelStatus(var_key=None):
     "Get kernel status"
@@ -2458,18 +2458,18 @@ def GetKernelStatus(var_key=None):
         return status_list
     elif (var_key==None):
         status_dict = {}
-        name_list = GetFloatParamNames() + GetIntParamNames() + GetBoolParamNames()
+        name_list = ng_kernel.llapi_getFloatParamNames() + ng_kernel.llapi_getIntParamNames() + ng_kernel.llapi_getBoolParamNames()
         for param_name in name_list:
             val = GetKernelStatus(param_name)
             status_dict[param_name] = val
         return status_dict
     elif (type(var_key)==str) | (type(var_key)==bytes):
-        if IsFloatParam(var_key):
-            return GetFloatParam(var_key)        
-        elif IsIntParam(var_key):
-            return GetIntParam(var_key)
-        elif IsBoolParam(var_key):
-            return GetBoolParam(var_key)
+        if ng_kernel.llapi_isFloatParam(var_key):
+            return ng_kernel.llapi_getFloatParam(var_key)
+        elif ng_kernel.llapi_isIntParam(var_key):
+            return ng_kernel.llapi_getIntParam(var_key)
+        elif ng_kernel.llapi_isBoolParam(var_key):
+            return ng_kernel.llapi_getBoolParam(var_key)
         else:
             raise ValueError("Unknown parameter in GetKernelStatus", var_key)
     else:
@@ -2481,18 +2481,18 @@ def SetKernelStatus(params, val=None):
         for param_name in params:
             SetKernelStatus(param_name, params[param_name])
     elif (type(params)==str):
-        if IsFloatParam(params):
-            return SetFloatParam(params, val)        
-        elif IsIntParam(params):
-            return SetIntParam(params, val)
-        elif IsBoolParam(params):
-            return SetBoolParam(params, val)
+        if ng_kernel.llapi_isFloatParam(params):
+            return ng_kernel.llapi_setFloatParam(params, val)
+        elif ng_kernel.llapi_isIntParam(params):
+            return ng_kernel.llapi_setIntParam(params, val)
+        elif ng_kernel.llapi_isBoolParam(params):
+            return ng_kernel.llapi_setBoolParam(params, val)
         else:
             raise ValueError("Unknown parameter in SetKernelStatus", params)
     else:
         raise ValueError("Wrong argument in SetKernelStatus")       
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
 
 
 NESTGPU_RemoteCreate = _nestgpu.NESTGPU_RemoteCreate
@@ -2514,6 +2514,6 @@ def RemoteCreate(i_host, model_name, n_node=1, n_ports=1, status_dict=None):
                                     ctypes.c_int(n_ports))
     node_seq = NodeSeq(i_node, n_node)
     ret = RemoteNodeSeq(i_host, node_seq)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret

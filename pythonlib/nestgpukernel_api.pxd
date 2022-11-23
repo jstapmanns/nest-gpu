@@ -1,4 +1,24 @@
+from libcpp cimport bool as cbool
+
 cdef extern from "nestgpu_C.h":
+    int NESTGPU_MpiId()
+    char *NESTGPU_GetErrorMessage()
+    unsigned char NESTGPU_GetErrorCode()
+    int NESTGPU_GetNBoolParam()
+    char **NESTGPU_GetBoolParamNames()
+    int NESTGPU_IsBoolParam(char *param_name)
+    cbool NESTGPU_GetBoolParam(char *param_name)
+    int NESTGPU_SetBoolParam(char *param_name, cbool val)
+    int NESTGPU_GetNIntParam()
+    char **NESTGPU_GetIntParamNames()
+    int NESTGPU_IsIntParam(char *param_name)
+    int NESTGPU_GetIntParam(char *param_name)
+    int NESTGPU_SetIntParam(char *param_name, int val)
+    int NESTGPU_GetNFloatParam()
+    char **NESTGPU_GetFloatParamNames()
+    int NESTGPU_IsFloatParam(char *param_name)
+    float NESTGPU_GetFloatParam(char *param_name)
+    int NESTGPU_SetFloatParam(char *param_name, float val)
     int NESTGPU_Connect(int i_source_node, int i_target_node,
             unsigned char port, unsigned char syn_group,
             float weight, float delay) except +
