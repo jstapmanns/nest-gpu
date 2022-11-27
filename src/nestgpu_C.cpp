@@ -121,10 +121,13 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string file_name_str = std::string(file_name);
     std::vector<std::string> var_name_vect;
+    //std::cout << "NESTGPU_CreateRecord in nestgpu_C.cpp: vector of var_names:" << std::endl;
     for (int i=0; i<n_node; i++) {
       std::string var_name = std::string(var_name_arr[i]);
       var_name_vect.push_back(var_name);
+      //std::cout << var_name << ",  ";
     }
+    //std::cout << std::endl;
     ret = NESTGPU_instance->CreateRecord
       (file_name_str, var_name_vect.data(), i_node_arr, port_arr,
        n_node);		       
@@ -535,6 +538,21 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
 				      ConnSpec_instance, SynSpec_instance); 
+  } END_ERR_PROP return ret; }
+
+  int NESTGPU_ConnectSeqGroup_fake(int *i_target, int n_target)
+  { int ret = 0; BEGIN_ERR_PROP {
+    std::cout << "NESTGPU_ConnectSeqGroup() in nestgpu_C.cpp" << std::endl;
+    std::cout << "n_target = " << n_target << "  target list:" << std::endl;
+    for(int i = 0; i < n_target; i++)
+    {
+        std::cout << i << ": " << *i_target << " | ";
+        ++i_target;
+    }
+    std::cout << std::endl;
+    //ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
+	  //			      ConnSpec_instance, SynSpec_instance); 
+    ret = 5;
   } END_ERR_PROP return ret; }
 
   int NESTGPU_ConnectGroupSeq(int *i_source, int n_source, int i_target,

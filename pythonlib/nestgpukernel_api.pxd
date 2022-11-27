@@ -38,6 +38,13 @@ cdef extern from "nestgpu_C.h":
     int *NESTGPU_GetGroupGroupConnections(int *i_source, int n_source,
                       int *i_target, int n_target,
                       int syn_group, int *n_conn) except +
+    int NESTGPU_CreateRecord(char *file_name, char *var_name_arr[],
+            int *i_node_arr, int *port_arr, int n_node) except +
+    int NESTGPU_GetRecordDataRows(int i_record)
+    int NESTGPU_GetRecordDataColumns(int i_record)
+    float **NESTGPU_GetRecordData(int i_record)
+    int NESTGPU_SetSimTime(float sim_time) except +
+    int NESTGPU_Simulate() except +
 
 
 '''

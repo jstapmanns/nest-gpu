@@ -1,7 +1,8 @@
 import numpy
 from cython.operator cimport dereference as deref
 from cython cimport view
-from libc.string cimport strlen
+from libc.string cimport strlen, memcpy
+from libc.stdlib cimport malloc, free
 
 class ConnectionId(object):
     def __init__(self, i_source, i_group, i_conn):
@@ -23,7 +24,7 @@ cdef int* np_int_array_to_pointer(object array):
         raise TypeError('array must be a 1-dimensional NumPy array, got {}-dimensional NumPy array'.format(array.ndim))
 
     # Get pointers to the first element in the Numpy array
-    cdef int[:] array_int_mv
+    cdef int[::1] array_int_mv
     cdef int* array_int_ptr
 
     if numpy.issubdtype(array.dtype, numpy.integer):
@@ -46,7 +47,7 @@ cdef long* np_long_array_to_pointer(object array):
         raise TypeError('array must be a 1-dimensional NumPy array, got {}-dimensional NumPy array'.format(array.ndim))
 
     # Get pointers to the first element in the Numpy array
-    cdef long[:] array_long_mv
+    cdef long[::1] array_long_mv
     cdef long* array_long_ptr
 
     if numpy.issubdtype(array.dtype, numpy.integer):
@@ -57,7 +58,7 @@ cdef long* np_long_array_to_pointer(object array):
 
     return array_long_ptr
 
-cdef int_array_to_pylist(int* first, int n_elements):
+cdef object int_array_to_pylist(int* first, int n_elements):
     '''
     this function converts a C array of ints into a python list.
     arguments:
@@ -73,6 +74,11 @@ cdef int_array_to_pylist(int* first, int n_elements):
     return pylist
 
 cdef object int_array_to_conn_list(int* first, int n_conn):
+    '''
+    this function is used in the llapi_getConnections routines.
+    It converts a C array of ints into a pyhton list that
+    contains the connection IDs.
+    '''
     #print('llapi: number of connections: {}'.format(n_conn))
     conn_arr = numpy.asarray(<int[:3*n_conn]>first)
     conn_list = []
@@ -85,10 +91,36 @@ cdef object int_array_to_conn_list(int* first, int n_conn):
     #print('llpai: length of conn_list: {}'.format(len(conn_list)))
     return conn_list
 
+cdef object float_array2d_to_numpy2d(float** first_p, int n_row, int n_col):
+    '''
+    this function converts a C array of float arrays into a numpy 2d array.
+    '''
+    cdef float* first
+    cdef float[:,::1] memview_arr = numpy.empty((n_row, n_col), dtype=numpy.float32)
+    cdef float[::1] memview_row
+    for i in range(n_row):
+        first = first_p[i]
+        memview_row = <float[:n_col]>first
+        memview_arr[i] = memview_row
+
+    ret = numpy.asarray(memview_arr)
+    return ret
+
+
 cdef object cstring_to_pystring(char* cstr):
     np_byte_array = numpy.asarray(<char[:strlen(cstr)]>(cstr))
     ret = ''.join(numpy.char.decode(np_byte_array, encoding='utf-8'))
     return ret
+
+cdef char** pystring_list_to_cstring_array(object pystring_list):
+    cdef char** cstring_array = <char**>malloc(sizeof(char*) * len(pystring_list))
+    # TODO: Is this dangerous? Do we have to store the encoded bytes in a separate list before
+    # we fill the c array?
+    for i, s in enumerate(pystring_list):
+        py_byte_string = s.encode('utf-8')
+        cstring_array[i] = py_byte_string
+
+    return cstring_array
 
 cdef int GetNBoolParam():
     "Get number of kernel boolean parameters"
@@ -123,6 +155,18 @@ cdef int GetNFloatParam():
     "Get number of kernel float parameters"
 
     cdef int ret = NESTGPU_GetNFloatParam()
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetRecordDataRows(int i_record):
+    cdef int ret = NESTGPU_GetRecordDataRows(i_record)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetRecordDataColumns(int i_record):
+    cdef int ret = NESTGPU_GetRecordDataColumns(i_record)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -283,7 +327,8 @@ def llapi_create(model, int n, int n_port):
 
 # TODO: should we change all the char* arguments to string as it is done in NEST?
 #       answer: no, we do not want to change the C api, so we use the char* array.
-# TODO: can we make use of boost?
+# TODO: can we make use of boost? (not necessary but the new NEST api does, I think.
+# TODO: Does it make sense to replace python lists by numpy arrays?
 
 def llapi_getSeqSeqConnections(int i_source, int n_source, int i_target,
         int n_target, int syn_group):
@@ -330,3 +375,31 @@ def llapi_getGroupGroupConnections(object i_source, int n_source, object i_targe
     ret = int_array_to_conn_list(c_ret, n_conn)
     return ret
 
+def llapi_createRecord(object file_name, object var_name_arr,
+        object i_node_arr, object port_arr, int n_node):
+    print('using cython llapi_createRecord()')
+    node_array = numpy.array(i_node_arr, dtype=numpy.int32, copy=True, order='C')
+    port_array = numpy.array(port_arr, dtype=numpy.int32, copy=True, order='C')
+    ret = NESTGPU_CreateRecord(file_name.encode('utf-8'),
+            pystring_list_to_cstring_array(var_name_arr), np_int_array_to_pointer(node_array),
+            np_int_array_to_pointer(port_array), n_node)
+    return ret
+
+def llapi_getRecordData(int i_record):
+    print('using cython llapi_getRecordData()')
+    n_row = GetRecordDataRows(i_record)
+    n_col = GetRecordDataColumns(i_record)
+    cdef float** data_array_p = NESTGPU_GetRecordData(i_record)
+    np_data_array = float_array2d_to_numpy2d(data_array_p, n_row, n_col)
+    ret = np_data_array.tolist()
+    return ret
+
+def llapi_setSimTime(float sim_time):
+    print('using cython llapi_setSimTime()')
+    ret = NESTGPU_SetSimTime(sim_time)
+    return ret
+
+def llapi_simulate():
+    print('using cython llapi_simulate()')
+    ret = NESTGPU_Simulate()
+    return ret

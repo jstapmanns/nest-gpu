@@ -171,12 +171,12 @@ def GetMaxSpikeBufferSize():
     return ret
 
 
-NESTGPU_SetSimTime = _nestgpu.NESTGPU_SetSimTime
-NESTGPU_SetSimTime.argtypes = (ctypes.c_float,)
-NESTGPU_SetSimTime.restype = ctypes.c_int
+#NESTGPU_SetSimTime = _nestgpu.NESTGPU_SetSimTime
+#NESTGPU_SetSimTime.argtypes = (ctypes.c_float,)
+#NESTGPU_SetSimTime.restype = ctypes.c_int
 def SetSimTime(sim_time):
     "Set neural activity simulated time in ms"
-    ret = NESTGPU_SetSimTime(ctypes.c_float(sim_time))
+    ret = ng_kernel.llapi_setSimTime(sim_time)
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
@@ -227,69 +227,71 @@ def CreatePoissonGenerator(n_node, rate):
     return ret
 
 
-NESTGPU_CreateRecord = _nestgpu.NESTGPU_CreateRecord
-NESTGPU_CreateRecord.argtypes = (c_char_p, ctypes.POINTER(c_char_p), c_int_p, c_int_p, ctypes.c_int)
-NESTGPU_CreateRecord.restype = ctypes.c_int
+#NESTGPU_CreateRecord = _nestgpu.NESTGPU_CreateRecord
+#NESTGPU_CreateRecord.argtypes = (c_char_p, ctypes.POINTER(c_char_p), c_int_p, c_int_p, ctypes.c_int)
+#NESTGPU_CreateRecord.restype = ctypes.c_int
 def CreateRecord(file_name, var_name_list, i_node_list, i_port_list):
     "Create a record of neuron variables"
     n_node = len(i_node_list)
-    c_file_name = ctypes.create_string_buffer(to_byte_str(file_name), len(file_name)+1)    
-    array_int_type = ctypes.c_int * n_node
-    array_char_pt_type = c_char_p * n_node
-    c_var_name_list=[]
-    for i in range(n_node):
-        c_var_name = ctypes.create_string_buffer(to_byte_str(var_name_list[i]), len(var_name_list[i])+1)
-        c_var_name_list.append(c_var_name)
+    #c_file_name = ctypes.create_string_buffer(to_byte_str(file_name), len(file_name)+1)    
+    #array_int_type = ctypes.c_int * n_node
+    #array_char_pt_type = c_char_p * n_node
+    #c_var_name_list=[]
+    #for i in range(n_node):
+    #    c_var_name = ctypes.create_string_buffer(to_byte_str(var_name_list[i]), len(var_name_list[i])+1)
+    #    c_var_name_list.append(c_var_name)
 
-    ret = NESTGPU_CreateRecord(c_file_name,
-                                 array_char_pt_type(*c_var_name_list),
-                                 array_int_type(*i_node_list),
-                                 array_int_type(*i_port_list),
-                                 ctypes.c_int(n_node))
+    #ret = NESTGPU_CreateRecord(c_file_name,
+    #                             array_char_pt_type(*c_var_name_list),
+    #                             array_int_type(*i_node_list),
+    #                             array_int_type(*i_port_list),
+    #                             ctypes.c_int(n_node))
+    ret = ng_kernel.llapi_createRecord(file_name, var_name_list, i_node_list, i_port_list, n_node)
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 
-NESTGPU_GetRecordDataRows = _nestgpu.NESTGPU_GetRecordDataRows
-NESTGPU_GetRecordDataRows.argtypes = (ctypes.c_int,)
-NESTGPU_GetRecordDataRows.restype = ctypes.c_int
-def GetRecordDataRows(i_record):
-    "Get record n. of rows"
-    ret = NESTGPU_GetRecordDataRows(ctypes.c_int(i_record))
-    if ng_kernel.llapi_getErrorCode() != 0:
-        raise ValueError(ng_kernel.llapi_getErrorMessage())
-    return ret
+#NESTGPU_GetRecordDataRows = _nestgpu.NESTGPU_GetRecordDataRows
+#NESTGPU_GetRecordDataRows.argtypes = (ctypes.c_int,)
+#NESTGPU_GetRecordDataRows.restype = ctypes.c_int
+#def GetRecordDataRows(i_record):
+#    "Get record n. of rows"
+#    ret = NESTGPU_GetRecordDataRows(ctypes.c_int(i_record))
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
 
 
-NESTGPU_GetRecordDataColumns = _nestgpu.NESTGPU_GetRecordDataColumns
-NESTGPU_GetRecordDataColumns.argtypes = (ctypes.c_int,)
-NESTGPU_GetRecordDataColumns.restype = ctypes.c_int
-def GetRecordDataColumns(i_record):
-    "Get record n. of columns"
-    ret = NESTGPU_GetRecordDataColumns(ctypes.c_int(i_record))
-    if ng_kernel.llapi_getErrorCode() != 0:
-        raise ValueError(ng_kernel.llapi_getErrorMessage())
-    return ret
+#NESTGPU_GetRecordDataColumns = _nestgpu.NESTGPU_GetRecordDataColumns
+#NESTGPU_GetRecordDataColumns.argtypes = (ctypes.c_int,)
+#NESTGPU_GetRecordDataColumns.restype = ctypes.c_int
+#def GetRecordDataColumns(i_record):
+#    "Get record n. of columns"
+#    ret = NESTGPU_GetRecordDataColumns(ctypes.c_int(i_record))
+#    if ng_kernel.llapi_getErrorCode() != 0:
+#        raise ValueError(ng_kernel.llapi_getErrorMessage())
+#    return ret
 
 
-NESTGPU_GetRecordData = _nestgpu.NESTGPU_GetRecordData
-NESTGPU_GetRecordData.argtypes = (ctypes.c_int,)
-NESTGPU_GetRecordData.restype = ctypes.POINTER(c_float_p)
+#NESTGPU_GetRecordData = _nestgpu.NESTGPU_GetRecordData
+#NESTGPU_GetRecordData.argtypes = (ctypes.c_int,)
+#NESTGPU_GetRecordData.restype = ctypes.POINTER(c_float_p)
 def GetRecordData(i_record):
     "Get record data"
-    data_arr_pt = NESTGPU_GetRecordData(ctypes.c_int(i_record))
-    nr = GetRecordDataRows(i_record)
-    nc = GetRecordDataColumns(i_record)
-    data_list = []
-    for ir in range(nr):
-        row_list = []
-        for ic in range(nc):
-            row_list.append(data_arr_pt[ir][ic])
-            
-        data_list.append(row_list)
-        
-    ret = data_list    
+    #data_arr_pt = NESTGPU_GetRecordData(ctypes.c_int(i_record))
+    #nr = GetRecordDataRows(i_record)
+    #nc = GetRecordDataColumns(i_record)
+    #data_list = []
+    #for ir in range(nr):
+    #    row_list = []
+    #    for ic in range(nc):
+    #        row_list.append(data_arr_pt[ir][ic])
+    #        
+    #    data_list.append(row_list)
+    #    
+    #ret = data_list    
+    ret = ng_kernel.llapi_getRecordData(i_record)
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
@@ -1201,12 +1203,12 @@ def Calibrate():
     return ret
 
 
-NESTGPU_Simulate = _nestgpu.NESTGPU_Simulate
-NESTGPU_Simulate.restype = ctypes.c_int
+#NESTGPU_Simulate = _nestgpu.NESTGPU_Simulate
+#NESTGPU_Simulate.restype = ctypes.c_int
 def Simulate(sim_time=1000.0):
     "Simulate neural activity"
     SetSimTime(sim_time)
-    ret = NESTGPU_Simulate()
+    ret = ng_kernel.llapi_simulate()
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
@@ -1568,7 +1570,6 @@ def SetSynParamFromArray(param_name, par_dict, array_size):
 
 def Connect(source, target, conn_dict, syn_dict):
     "Connect two node groups"
-    print("nest-gpu.py Connect()")
     if (type(source)!=list) & (type(source)!=tuple) & (type(source)!=NodeSeq):
         raise ValueError("Unknown source type")
     if (type(target)!=list) & (type(target)!=tuple) & (type(target)!=NodeSeq):

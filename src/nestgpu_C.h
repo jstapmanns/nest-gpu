@@ -197,6 +197,8 @@ extern "C" {
   int NESTGPU_ConnectSeqGroup(int i_source, int n_source, int *i_target,
 				int n_target);
 
+  int NESTGPU_ConnectSeqGroup_fake(int *i_target, int n_target);
+
   int NESTGPU_ConnectGroupSeq(int *i_source, int n_source, int i_target,
 				int n_target);
 
