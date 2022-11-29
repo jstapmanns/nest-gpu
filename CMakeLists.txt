@@ -44,8 +44,8 @@ endif()
 ##################         All User Defined options           ##################
 ################################################################################
 
-# use Python to build PyNEST
-set( with-python ON )
+# Cython enabled by default to prepare for the upcoming cython interface.
+# Not yet needed, however in the future it will be a requirement.
 option( cythonize-pynest "Use Cython to cythonize pynestkernel.pyx [default=ON]. If OFF, PyNEST has to be build from a pre-cythonized pynestkernel.pyx." ON )
 
 # select parallelization scheme
@@ -53,17 +53,25 @@ set( with-gpu-arch "70" CACHE STRING "Specify the GPU compute architecture [defa
 set( with-mpi ON CACHE STRING "Build with MPI parallelization [default=ON]." )
 set( with-openmp ON CACHE BOOL "Build with OpenMP multi-threading [default=ON]. Optionally set OMP compiler flags." )
 
-# generic build configuration
-set( with-optimize ON CACHE STRING "Enable user defined optimizations [default=ON (uses '-O3')]. When OFF, no '-O' flag is passed to the compiler. Explicit compiler flags can be given; separate multiple flags by ';'." )
+# external libraries
+# libltdl not yet needed but will be useful for NESTML
+set( with-ltdl OFF CACHE STRING "Build with ltdl library [default=OFF]. To set a specific ltdl, give the  install path. NEST GPU uses ltdl for dynamic loading of external user modules." )
+
+# compiler options; explicit compiler flags can be given.
+set( with-optimize ON CACHE STRING "Enable user defined optimizations [default=ON (uses '-O3')]. When OFF, no '-O' flag is passed to the compiler. Separate multiple flags by ';'." )
 set( with-warning ON CACHE STRING "Enable user defined warnings [default=ON (uses '-Wall')]. Separate  multiple flags by ';'." )
 set( with-debug OFF CACHE STRING "Enable user defined debug flags [default=OFF]. When ON, '-g' is used. Separate  multiple flags by ';'." )
+
+# CUDA options
 set( with-cpp-std OFF CACHE STRING "C++ standard to use for compilation [default=OFF]." )
 set( with-libraries OFF CACHE STRING "Link additional libraries [default=OFF]. Give full path. Separate multiple libraries by ';'." )
 set( with-includes OFF CACHE STRING "Add additional include paths [default=OFF]. Give full path without '-I'. Separate multiple include paths by ';'." )
 set( with-defines OFF CACHE STRING "Additional defines, e.g. '-DXYZ=1' [default=OFF]. Separate multiple defines by ';'." )
-set( with-version-suffix OFF CACHE STRING "Set a user defined version suffix [default='']." )
 set( with-max-rreg-count "55" CACHE STRING "Set a maximum amount of register used when compiling [default=55]. Separate multiple flags by ';'." )
-set( with-ptxas-options OFF CACHE STRING "Options for ptxas compiling [default='-v']. Separate multiple flags by ';'." )
+set( with-ptxas-options OFF CACHE STRING "Options for ptxas compiling [default=OFF]. Separate multiple flags by ';'." )
+
+# generic build configuration
+set( with-version-suffix OFF CACHE STRING "Set a user defined version suffix [default='']." )
 
 ################################################################################
 ##################      Project Directory variables           ##################
@@ -76,7 +84,7 @@ set( with-ptxas-options OFF CACHE STRING "Options for ptxas compiling [default='
 set( CMAKE_INSTALL_DATADIR "share/${PROJECT_NAME}" CACHE STRING "Relative directory, where NEST GPU installs its data (share/nest)" )
 
 ################################################################################
-##################           Find utility programs            ##################
+##################  Find utility programs (#TODO adapt for later PR)  #########
 ################################################################################
 
 # needed for pynest test suite
@@ -97,7 +105,7 @@ include( CheckIncludesSymbols )
 
 # These includes publish function names.
 include( ProcessOptions )
-#include( ConfigureSummary )
+include( ConfigureSummary )
 include( GetTriple )
 
 # get triples arch-vendor-os
@@ -106,21 +114,27 @@ get_target_triple( NEST_TARGET_TRIPLE NEST_TARGET_ARCH NEST_TARGET_VENDOR NEST_T
 
 include( GNUInstallDirs )
 nest_post_process_with_python()
+
 nest_process_with_openmp()
 nest_process_with_mpi()
 nest_process_with_mpi4py()
 nestgpu_process_cuda_arch()
-nest_process_with_std()
-nestgpu_process_with_max_rreg_count()
-nestgpu_process_with_ptxas_options()
-nest_process_with_libraries()
-nest_process_with_includes()
-nest_process_with_defines()
+
+nest_process_with_libltdl()
+
 nestgpu_pre_process_compile_flags()
 nest_process_with_optimize()
 nest_process_with_debug()
 nest_process_with_warning()
 nestgpu_post_process_compile_flags()
+
+nest_process_with_std()
+nest_process_with_libraries()
+nest_process_with_includes()
+nest_process_with_defines()
+nestgpu_process_with_max_rreg_count()
+nestgpu_process_with_ptxas_options()
+
 nest_process_version_suffix()
 
 ################################################################################
@@ -132,7 +146,7 @@ get_version_info()
 printInfo("-- NEST GPU version: ${NEST_VERSION_STRING}")
 
 ################################################################################
-##################         Enable Testing Targets             ##################
+##################  Enable Testing Targets  (#TODO adapt for later PR) #########
 ################################################################################
 #enable_testing()
 #set( TEST_OPTS "--with-python=${PYTHON}" )
@@ -171,60 +185,72 @@ add_subdirectory( pythonlib )
 # used in nest-config
 
 # all compiler flags
-#if ( NOT CMAKE_BUILD_TYPE OR "${CMAKE_BUILD_TYPE}" STREQUAL "None" )
-#  set( ALL_CFLAGS "${CMAKE_C_FLAGS}" )
-#  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS}" )
-#elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
-#  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_DEBUG}" )
-#  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}" )
-#elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" )
-#  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_RELEASE}" )
-#  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}" )
-#elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo" )
-#  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_RELWITHDEBINFO}" )
-#  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
-#elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "MinSizeRel" )
-#  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_MINSIZEREL}" )
-#  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_MINSIZEREL}" )
-#else ()
-#  printError( "Unknown build type: '${CMAKE_BUILD_TYPE}'" )
-#endif ()
-#if ( with-defines )
-#  foreach ( def ${with-defines} )
-#    set( ALL_CFLAGS "${def} ${ALL_CFLAGS}" )
-#    set( ALL_CXXFLAGS "${def} ${ALL_CXXFLAGS}" )
-#  endforeach ()
-#endif ()
+if ( NOT CMAKE_BUILD_TYPE OR "${CMAKE_BUILD_TYPE}" STREQUAL "None" )
+  set( ALL_CFLAGS "${CMAKE_C_FLAGS}" )
+  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS}" )
+  set( ALL_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}" )
+elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_DEBUG}" )
+  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}" )
+  set( ALL_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_DEBUG}" )
+elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" )
+  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_RELEASE}" )
+  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}" )
+  set( ALL_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_RELEASE}" )
+elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo" )
+  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_RELWITHDEBINFO}" )
+  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}" )
+  set( ALL_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_RELWITHDEBINFO}" )
+elseif ( ${CMAKE_BUILD_TYPE} STREQUAL "MinSizeRel" )
+  set( ALL_CFLAGS "${CMAKE_C_FLAGS}   ${CMAKE_C_FLAGS_MINSIZEREL}" )
+  set( ALL_CXXFLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_MINSIZEREL}" )
+  set( ALL_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_MINSIZEREL}" )
+else ()
+  printError( "Unknown build type: '${CMAKE_BUILD_TYPE}'" )
+endif ()
+if ( with-defines )
+  foreach ( def ${with-defines} )
+    set( ALL_CFLAGS "${def} ${ALL_CFLAGS}" )
+    set( ALL_CXXFLAGS "${def} ${ALL_CXXFLAGS}" )
+    set( ALL_CUDA_FLAGS "${def} ${ALL_CUDA_FLAGS}" )
+  endforeach ()
+endif ()
 
 # libraries required to link extension modules
-#set( MODULE_LINK_LIBS
-#  "-lnestutil"
-#  "-lnestgpukernel"
-#  "${OpenMP_CXX_FLAGS}"
-#  "${MPI_CXX_LIBRARIES}" )
-#
-#if ( with-libraries )
-#  set( MODULE_LINK_LIBS "${MODULE_LINK_LIBS};${with-libraries}" )
-#endif ()
-#string( REPLACE ";" " " MODULE_LINK_LIBS "${MODULE_LINK_LIBS}" )
+set( MODULE_LINK_LIBS
+  "-lnestutil"
+  "-lsrc" # to be renamed to -lnestgpukernel
+  "-lcuda"
+  "-lcudart"
+  "-lcurand"
+  "${OpenMP_CXX_FLAGS}"
+  "${MPI_CXX_LIBRARIES}"
+  "${LTDL_LIBRARIES}" )
+
+if ( with-libraries )
+  set( MODULE_LINK_LIBS "${MODULE_LINK_LIBS};${with-libraries}" )
+endif ()
+string( REPLACE ";" " " MODULE_LINK_LIBS "${MODULE_LINK_LIBS}" )
 
 # libraries requied to link NEST
-#set( ALL_LIBS
-#  "-lnest"
-#  ${MODULE_LINK_LIBS} )
+set( ALL_LIBS
+  # "-lnestgpu"  # main function is inside src folder, in the future we will separate files following NEST structure
+  ${MODULE_LINK_LIBS} )
 
 
 # all includes
-#set( ALL_INCLUDES_tmp
-#  "${CMAKE_INSTALL_FULL_INCLUDEDIR}/nest"
-#  "${MPI_CXX_INCLUDE_PATH}" )
-#set( ALL_INCLUDES "" )
-#foreach ( INC ${ALL_INCLUDES_tmp} ${with-includes} )
-#  if ( INC AND NOT INC STREQUAL "" )
-#    set( ALL_INCLUDES "${ALL_INCLUDES} -I${INC}" )
-#  endif ()
-#endforeach ()
-#set( ALL_INCLUDES "${ALL_INCLUDES} )
+set( ALL_INCLUDES_tmp
+  "${CMAKE_INSTALL_FULL_INCLUDEDIR}/nestgpu"
+  "${CUDAToolkit_LIBRARY_DIR}"
+  "${MPI_CXX_INCLUDE_PATH}"
+  "${LTDL_INCLUDE_DIRS}" )
+set( ALL_INCLUDES "" )
+foreach ( INC ${ALL_INCLUDES_tmp} ${with-includes} )
+  if ( INC AND NOT INC STREQUAL "" )
+    set( ALL_INCLUDES "${ALL_INCLUDES} -I${INC}" )
+  endif ()
+endforeach ()
+set( ALL_INCLUDES "${ALL_INCLUDES}" )
 
 ################################################################################
 ##################           File generation here             ##################
@@ -248,8 +274,9 @@ install( FILES LICENSE README.md
     DESTINATION ${CMAKE_INSTALL_DOCDIR}
     )
 
+(#TODO adapt for later PR)
 #add_custom_target( install-nodoc
 #  COMMAND $(MAKE) NEST_INSTALL_NODOC=true install
 #)
 
-#nest_print_config_summary()
+nest_print_config_summary()
