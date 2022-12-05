@@ -1,6 +1,5 @@
 import sys
 import math
-import ctypes
 import nestgpu as ngpu
 from random import randrange
 import numpy as np
