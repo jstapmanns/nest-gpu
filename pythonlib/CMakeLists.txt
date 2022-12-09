@@ -28,6 +28,12 @@ target_link_libraries( nestgpukernel_api
     nestgpukernel
   )
 
+set_source_files_properties(
+    llapi_helpers.pyx
+    PROPERTIES CYTHON_IS_CXX TRUE )
+
+cython_add_module( llapi_helpers llapi_helpers.pyx )
+
 message(STATUS "PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
 message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 target_include_directories( nestgpukernel_api PRIVATE
@@ -36,7 +42,7 @@ target_include_directories( nestgpukernel_api PRIVATE
   ${Python_INCLUDE_DIRS}
   )
 
-install( TARGETS nestgpukernel_api
+install( TARGETS nestgpukernel_api llapi_helpers
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR} )
 install( FILES ${PROJECT_SOURCE_DIR}/pythonlib/nestgpu.py
     DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR} )

@@ -63,14 +63,6 @@ class SynGroup(object):
     def __init__(self, i_syn_group):
         self.i_syn_group = i_syn_group
 
-def to_byte_str(s):
-    if type(s)==str:
-        return s.encode('ascii')
-    elif type(s)==bytes:
-        return s
-    else:
-        raise ValueError("Variable cannot be converted to string")
-
 conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
                   "fixed_indegree", "fixed_outdegree")
 

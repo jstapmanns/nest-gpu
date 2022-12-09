@@ -387,17 +387,26 @@ int NESTGPU::_ConnectFixedOutdegree
 	    int_vect.push_back(j);
 	  }
 	}	
+  float delay;
+  int counter = 0;
+  std::cout << "delays in _ConnectFixedOutdegree() of connect_rules.h:" << std::endl;
 	for (int k=0; k<outdegree; k++) {
 	  int itn = int_vect[k];
 	  size_t i_array = (size_t)isn*outdegree + k;
 #ifdef _OPENMP
 	  omp_set_lock(&(lock[isn]));
 #endif	  
+      delay = syn_spec.delay_array_[i_array];
+      if (counter<20)
+      {
+        std::cout << delay << ", ";
+      }
       _SingleConnect<T1, T2>(source, isn, target, itn, i_array, syn_spec);
 #ifdef _OPENMP
 	  omp_unset_lock(&(lock[isn]));
 #endif
 	}
+  std::cout << std::endl;
       }
     }
   }
