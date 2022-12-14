@@ -4,6 +4,9 @@ import os
 import unicodedata
 import gc
 import nestgpukernel_api as ng_kernel
+from llapi_helpers import SynGroup
+from llapi_helpers import NodeSeq
+from llapi_helpers import RemoteNodeSeq
 
 
 print('\n              -- NEST GPU --\n')
@@ -14,59 +17,35 @@ print(' Homepage: https://github.com/nest/nest-gpu')
 print()
 
 
-class NodeSeq(object):
-    def __init__(self, i0, n=1):
-        if i0 == None:
-            i0 = 0
-            n = -1
-        self.i0 = i0
-        self.n = n
-
-    def Subseq(self, first, last):
-        if last<0 and last>=-self.n:
-            last = last%self.n
-        if first<0 | last<first:
-            raise ValueError("Sequence subset range error")
-        if last>=self.n:
-            raise ValueError("Sequence subset out of range")
-        return NodeSeq(self.i0 + first, last - first + 1)
-    def __getitem__(self, i):
-        if type(i)==slice:
-            if i.step != None:
-                raise ValueError("Subsequence cannot have a step")
-            return self.Subseq(i.start, i.stop-1)
-
-        if i<-self.n:
-            raise ValueError("Sequence index error")
-        if i>=self.n:
-            raise ValueError("Sequence index out of range")
-        if i<0:
-            i = i%self.n
-        return self.i0 + i
-    def ToList(self):
-        return list(range(self.i0, self.i0 + self.n))
-    def __len__(self):
-        return self.n
-
-class RemoteNodeSeq(object):
-    def __init__(self, i_host=0, node_seq=NodeSeq(None)):
-        self.i_host = i_host
-        self.node_seq = node_seq
-
-class ConnectionId(object):
-    def __init__(self, i_source, i_group, i_conn):
-        self.i_source = i_source
-        self.i_group = i_group
-        self.i_conn = i_conn
-
-class SynGroup(object):
-    def __init__(self, i_syn_group):
-        self.i_syn_group = i_syn_group
-
 conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
                   "fixed_indegree", "fixed_outdegree")
 
 ng_kernel.llapi_setOnException(1)
+
+def SetRandomSeed(seed):
+    "Set seed for random number generation"
+    ret = ng_kernel.llapi_setRandomSeed(seed)
+    return ret
+
+def SetTimeResolution(time_res):
+    "Set time resolution in ms"
+    ret = ng_kernel.llapi_setTimeResolution(time_res)
+    return ret
+
+def GetTimeResolution():
+    "Get time resolution in ms"
+    ret = ng_kernel.llapi_getTimeResolution()
+    return ret
+
+def SetMaxSpikeBufferSize(max_size):
+    "Set maximum size of spike buffer per node"
+    ret = ng_kernel.llapi_setMaxSpikeBufferSize(max_size)
+    return ret
+
+def GetMaxSpikeBufferSize():
+    "Get maximum size of spike buffer per node"
+    ret = ng_kernel.llapi_getMaxSpikeBufferSize()
+    return ret
 
 def SetSimTime(sim_time):
     "Set neural activity simulated time in ms"
@@ -75,6 +54,10 @@ def SetSimTime(sim_time):
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
+def SetVerbosityLevel(verbosity_level):
+    "Set verbosity level"
+    ret = ng_kernel.llapi_setVerbosityLevel(verbosity_level)
+    return ret
 
 def Create(model_name, n_node=1, n_ports=1, status_dict=None):
     "Create a neuron group"
@@ -109,6 +92,48 @@ def GetRecordData(i_record):
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
+
+def GetNeuronStatus(nodes, var_name):
+    "Get neuron group scalar or array variable or parameter"
+    if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
+        raise ValueError("Unknown node type")
+    if type(nodes)==NodeSeq:
+        if (ng_kernel.llapi_isNeuronScalParam(nodes.i0, var_name) |
+            ng_kernel.llapi_isNeuronPortParam(nodes.i0, var_name)):
+            ret = ng_kernel.llapi_getNeuronParam(nodes.i0, nodes.n, var_name)
+        elif ng_kernel.llapi_isNeuronArrayParam(nodes.i0, var_name):
+            ret = ng_kernel.llapi_getArrayParam(nodes.i0, nodes.n, var_name)
+        elif (ng_kernel.llapi_isNeuronIntVar(nodes.i0, var_name)):
+            ret = ng_kernel.llapi_getNeuronIntVar(nodes.i0, nodes.n, var_name)
+        elif (ng_kernel.llapi_isNeuronScalVar(nodes.i0, var_name) |
+              ng_kernel.llapi_isNeuronPortVar(nodes.i0, var_name)):
+            ret = ng_kernel.llapi_getNeuronVar(nodes.i0, nodes.n, var_name)
+        elif ng_kernel.llapi_isNeuronArrayVar(nodes.i0, var_name):
+            ret = ng_kernel.llapi_getArrayVar(nodes.i0, nodes.n, var_name)
+        elif ng_kernel.llapi_isNeuronGroupParam(nodes.i0, var_name):
+            ret = ng_kernel.llapi_getNeuronStatus(nodes.ToList(), var_name)
+        else:
+            raise ValueError("Unknown neuron variable or parameter")
+    else:
+        if (ng_kernel.llapi_isNeuronScalParam(nodes[0], var_name) |
+            ng_kernel.llapi_isNeuronPortParam(nodes[0], var_name)):
+            ret = ng_kernel.llapi_getNeuronPtParam(nodes, var_name)
+        elif ng_kernel.llapi_isNeuronArrayParam(nodes[0], var_name):
+            ret = ng_kernel.llapi_getNeuronListArrayParam(nodes, var_name)
+        elif (ng_kernel.llapi_isNeuronIntVar(nodes[0], var_name)):
+            ret = ng_kernel.llapi_getNeuronPtIntVar(nodes, var_name)
+        elif (ng_kernel.llapi_isNeuronScalVar(nodes[0], var_name) |
+              ng_kernel.llapi_isNeuronPortVar(nodes[0], var_name)):
+            ret = ng_kernel.llapi_getNeuronPtVar(nodes, var_name)
+        elif ng_kernel.llapi_isNeuronArrayVar(nodes[0], var_name):
+            ret = ng_kernel.llapi_getNeuronListArrayVar(nodes, var_name)
+        elif ng_kernel.llapi_isNeuronGroupParam(nodes[0], var_name):
+            ret = []
+            for i_node in nodes:
+                ret.append(ng_kernel.llapi_getNeuronGroupParam(i_node, var_name))
+        else:
+            raise ValueError("Unknown neuron variable or parameter")
+    return ret
 
 def SetNeuronStatus(nodes, var_name, val):
     "Set neuron group scalar or array variable or parameter"
@@ -231,7 +256,6 @@ def Connect(source, target, conn_dict, syn_dict):
     return ret
 
 
-# TODO: translate subroutines
 def SetStatus(gen_object, params, val=None):
     "Set neuron or synapse group parameters or variables using dictionaries"
 
@@ -358,3 +382,93 @@ def SetKernelStatus(params, val=None):
         raise ValueError("Wrong argument in SetKernelStatus")       
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
+
+def ConnectMpiInit():
+    "Initialize MPI connections"
+    from mpi4py import MPI
+    argc=len(sys.argv)
+    ret = ng_kernel.llapi_connectMpiInit(argc, sys.argv)
+    return ret
+
+def MpiNp():
+    "Get MPI Np"
+    ret = ng_kernel.llapi_mpiNp()
+    return ret
+
+def MpiId():
+    "Get MPI Id"
+    ret = ng_kernel.llapi_mpiId()
+    return ret
+
+def Rank():
+    "Get MPI rank"
+    return MpiId()
+
+def RemoteConnect(i_source_host, source, i_target_host, target,
+                  conn_dict, syn_dict):
+    "Connect two node groups of differen mpi hosts"
+    if (type(i_source_host)!=int) | (type(i_target_host)!=int):
+        raise ValueError("Error in host index")
+    if (type(source)!=list) & (type(source)!=tuple) & (type(source)!=NodeSeq):
+        raise ValueError("Unknown source type")
+    if (type(target)!=list) & (type(target)!=tuple) & (type(target)!=NodeSeq):
+        raise ValueError("Unknown target type")
+
+    ng_kernel.llapi_connSpecInit()
+    ng_kernel.llapi_synSpecInit()
+    for param_name in conn_dict:
+        if param_name=="rule":
+            for i_rule in range(len(conn_rule_name)):
+                if conn_dict[param_name]==conn_rule_name[i_rule]:
+                    break
+            if i_rule < len(conn_rule_name):
+                ng_kernel.llapi_setConnSpecParam(param_name, i_rule)
+            else:
+                raise ValueError("Unknown connection rule")
+
+        elif ng_kernel.llapi_connSpecIsParam(param_name):
+            ng_kernel.llapi_setConnSpecParam(param_name, conn_dict[param_name])
+        else:
+            raise ValueError("Unknown connection parameter")
+
+    array_size = ng_kernel.llapi_ruleArraySize(conn_dict, source, target)
+
+    for param_name in syn_dict:
+        if ng_kernel.llapi_synSpecIsIntParam(param_name):
+            ng_kernel.llapi_setSynSpecIntParam(param_name, syn_dict[param_name])
+        elif ng_kernel.llapi_synSpecIsFloatParam(param_name):
+            fpar = syn_dict[param_name]
+            if (type(fpar)==dict):
+                ng_kernel.llapi_setSynParamFromArray(param_name, fpar, array_size)
+            else:
+                ng_kernel.llapi_setSynSpecFloatParam(param_name, fpar)
+
+        elif ng_kernel.llapi_synSpecIsFloatPtParam(param_name):
+            ng_kernel.llapi_setSynSpecFloatPtParam(param_name, syn_dict[param_name])
+        else:
+            raise ValueError("Unknown synapse parameter")
+    if (type(source)==NodeSeq) & (type(target)==NodeSeq) :
+        ret = ng_kernel.llapi_remoteConnectSeqSeq(i_source_host, source.i0, source.n,
+                                            i_target_host, target.i0, target.n)
+
+    else:
+        if (type(source)==NodeSeq) & (type(target)!=NodeSeq):
+            ret = ng_kernel.llapi_remoteConnectSeqGroup(i_source_host, source.i0,
+                                                  source.n, i_target_host,
+                                                  target, len(target))
+        elif (type(source)!=NodeSeq) & (type(target)==NodeSeq):
+            ret = ng_kernel.llapi_remoteConnectGroupSeq(i_source_host, source,
+                                                  len(source),
+                                                  i_target_host, target.i0,
+                                                  target.n)
+        else:
+            ret = ng_kernel.llapi_remoteConnectGroupGroup(i_source_host,
+                                                    source,
+                                                    len(source),
+                                                    i_target_host,
+                                                    target,
+                                                    len(target))
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
+    return ret
+

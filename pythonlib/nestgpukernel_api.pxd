@@ -40,6 +40,18 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_ConnectSeqGroup(int i_source, int n_source, int *i_target, int n_target) except +
     int NESTGPU_ConnectGroupSeq(int *i_source, int n_source, int i_target, int n_target) except +
     int NESTGPU_ConnectGroupGroup(int *i_source, int n_source, int *i_target, int n_target) except +
+    int NESTGPU_RemoteConnectSeqSeq(int i_source_host, int i_source,
+                    int n_source, int i_target_host,
+                    int i_target, int n_target)
+    int NESTGPU_RemoteConnectSeqGroup(int i_source_host, int i_source,
+                      int n_source, int i_target_host,
+                      int *i_target, int n_target)
+    int NESTGPU_RemoteConnectGroupSeq(int i_source_host, int *i_source,
+                      int n_source, int i_target_host,
+                      int i_target, int n_target)
+    int NESTGPU_RemoteConnectGroupGroup(int i_source_host, int *i_source,
+                    int n_source, int i_target_host,
+                    int *i_target, int n_target)
     int NESTGPU_Create(char *model_name, const int n_neuron, const int n_port) except +
     int *NESTGPU_GetSeqSeqConnections(int i_source, int n_source, int i_target,
                       int n_target, int syn_group, int *n_conn) except +
@@ -95,54 +107,40 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_SetNeuronGroupParam(int i_node, int n_node, char *param_name,
                     float val)
     int NESTGPU_Calibrate()
-
-
-'''
     int NESTGPU_SetRandomSeed(unsigned long long seed)
     int NESTGPU_SetTimeResolution(float time_res)
     float NESTGPU_GetTimeResolution()
     int NESTGPU_SetMaxSpikeBufferSize(int max_size)
     int NESTGPU_GetMaxSpikeBufferSize()
     int NESTGPU_SetVerbosityLevel(int verbosity_level)
-    int NESTGPU_CreatePoissonGenerator(int n_node, float rate)
-                 int n_node)
     int NESTGPU_GetNeuronParamSize(int i_node, char *param_name)
-    int NESTGPU_GetNeuronVarSize(int i_node, char *var_name)
     float *NESTGPU_GetNeuronParam(int i_node, int n_neuron,
                   char *param_name)
     float *NESTGPU_GetNeuronPtParam(int *i_node, int n_neuron,
                     char *param_name)
     float *NESTGPU_GetArrayParam(int i_node, char *param_name)
+    float NESTGPU_GetNeuronGroupParam(int i_node, char *param_name)
+    int NESTGPU_GetNeuronVarSize(int i_node, char *var_name)
     int *NESTGPU_GetNeuronIntVar(int i_node, int n_neuron,
                  char *param_name)
-    int *NESTGPU_GetNeuronPtIntVar(int *i_node, int n_neuron,
-                   char *param_name)
     float *NESTGPU_GetNeuronVar(int i_node, int n_neuron,
                 char *param_name)
+    int *NESTGPU_GetNeuronPtIntVar(int *i_node, int n_neuron,
+                   char *param_name)
     float *NESTGPU_GetNeuronPtVar(int *i_node, int n_neuron,
                   char *param_name)
     float *NESTGPU_GetArrayVar(int i_node, char *var_name)
-    int NESTGPU_StartSimulation()
-    int NESTGPU_SimulationStep()
-    int NESTGPU_EndSimulation()
     int NESTGPU_ConnectMpiInit(int argc, char *argv[])
     int NESTGPU_MpiNp()
+
+
+'''
+    int NESTGPU_CreatePoissonGenerator(int n_node, float rate)
+                 int n_node)
     int NESTGPU_ProcMaster()
     int NESTGPU_MpiFinalize()
     unsigned int *NESTGPU_RandomInt(size_t n)
     float *NESTGPU_RandomUniform(size_t n)
-    int NESTGPU_RemoteConnectSeqSeq(int i_source_host, int i_source,
-                    int n_source, int i_target_host,
-                    int i_target, int n_target)
-    int NESTGPU_RemoteConnectSeqGroup(int i_source_host, int i_source,
-                      int n_source, int i_target_host,
-                      int *i_target, int n_target)
-    int NESTGPU_RemoteConnectGroupSeq(int i_source_host, int *i_source,
-                      int n_source, int i_target_host,
-                      int i_target, int n_target)
-    int NESTGPU_RemoteConnectGroupGroup(int i_source_host, int *i_source,
-                    int n_source, int i_target_host,
-                    int *i_target, int n_target)
     char **NESTGPU_GetIntVarNames(int i_node)
     char **NESTGPU_GetScalVarNames(int i_node)
     int NESTGPU_GetNIntVar(int i_node)
@@ -182,7 +180,6 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_GetExtNeuronInputSpikes(int *n_spikes, int **node, int **port,
                     float **spike_height,
                     int include_zeros)
-    float NESTGPU_GetNeuronGroupParam(int i_node, char *param_name)
     int NESTGPU_GetBoolParamIdx(char *param_name)
     int NESTGPU_GetFloatParamIdx(char *param_name)
     int NESTGPU_GetIntParamIdx(char *param_name)
