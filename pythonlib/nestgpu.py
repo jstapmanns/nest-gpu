@@ -4,9 +4,7 @@ import os
 import unicodedata
 import gc
 import nestgpukernel_api as ng_kernel
-from llapi_helpers import SynGroup
-from llapi_helpers import NodeSeq
-from llapi_helpers import RemoteNodeSeq
+from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId
 
 
 print('\n              -- NEST GPU --\n')
@@ -95,9 +93,11 @@ def GetRecordData(i_record):
 
 def GetNeuronStatus(nodes, var_name):
     "Get neuron group scalar or array variable or parameter"
+    print('nestgpu.py GetNeuronStatus()')
     if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
         raise ValueError("Unknown node type")
     if type(nodes)==NodeSeq:
+        print('GetNeuronStatus() nodes is NodeSeq')
         if (ng_kernel.llapi_isNeuronScalParam(nodes.i0, var_name) |
             ng_kernel.llapi_isNeuronPortParam(nodes.i0, var_name)):
             ret = ng_kernel.llapi_getNeuronParam(nodes.i0, nodes.n, var_name)
@@ -115,19 +115,27 @@ def GetNeuronStatus(nodes, var_name):
         else:
             raise ValueError("Unknown neuron variable or parameter")
     else:
+        print('GetNeuronStatus() nodes is not a NodeSeq')
         if (ng_kernel.llapi_isNeuronScalParam(nodes[0], var_name) |
             ng_kernel.llapi_isNeuronPortParam(nodes[0], var_name)):
+            print('case 1')
             ret = ng_kernel.llapi_getNeuronPtParam(nodes, var_name)
         elif ng_kernel.llapi_isNeuronArrayParam(nodes[0], var_name):
+            print('case 2')
             ret = ng_kernel.llapi_getNeuronListArrayParam(nodes, var_name)
         elif (ng_kernel.llapi_isNeuronIntVar(nodes[0], var_name)):
+            print('case 3')
+            print('nodes: {}'.format(nodes))
             ret = ng_kernel.llapi_getNeuronPtIntVar(nodes, var_name)
         elif (ng_kernel.llapi_isNeuronScalVar(nodes[0], var_name) |
               ng_kernel.llapi_isNeuronPortVar(nodes[0], var_name)):
+            print('case 4')
             ret = ng_kernel.llapi_getNeuronPtVar(nodes, var_name)
         elif ng_kernel.llapi_isNeuronArrayVar(nodes[0], var_name):
+            print('case 5')
             ret = ng_kernel.llapi_getNeuronListArrayVar(nodes, var_name)
         elif ng_kernel.llapi_isNeuronGroupParam(nodes[0], var_name):
+            print('case 6')
             ret = []
             for i_node in nodes:
                 ret.append(ng_kernel.llapi_getNeuronGroupParam(i_node, var_name))
@@ -333,7 +341,7 @@ def SetNeuronGroupParam(nodes, param_name, val):
     if type(nodes)!=NodeSeq:
         raise ValueError("Wrong argument type in SetNeuronGroupParam")
 
-    ret = NESTGPU_SetNeuronGroupParam(nodes.i0, nodes.n, param_name.encode('utf-8'), val)
+    ret = ng_kernel.llapi_setNeuronGroupParam(nodes.i0, nodes.n, param_name.encode('utf-8'), val)
     return ret
 
 
@@ -362,7 +370,7 @@ def GetKernelStatus(var_key=None):
         else:
             raise ValueError("Unknown parameter in GetKernelStatus", var_key)
     else:
-        raise ValueError("Unknown key type in GetSynGroupStatus", type(var_key))
+        raise ValueError("Unknown key type in GetKernelStatus", type(var_key))
 
 def SetKernelStatus(params, val=None):
     "Set kernel parameters using dictionaries"
@@ -472,3 +480,89 @@ def RemoteConnect(i_source_host, source, i_target_host, target,
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
+def ActivateSpikeCount(nodes):
+    "Activate spike count for node group"
+    if type(nodes)!=NodeSeq:
+        raise ValueError("Argument type of ActivateSpikeCount must be NodeSeq")
+
+    ret = ng_kernel.llapi_activateSpikeCount(nodes.i0, nodes.n)
+    return ret
+
+def ActivateRecSpikeTimes(nodes, max_n_rec_spike_times):
+    "Activate spike time recording for node group"
+    if type(nodes)!=NodeSeq:
+        raise ValueError("Argument type of ActivateRecSpikeTimes must be NodeSeq")
+
+    ret = ng_kernel.llapi_activateRecSpikeTimes(nodes.i0, nodes.n,
+                                          max_n_rec_spike_times)
+    return ret
+
+def SetRecSpikeTimesStep(nodes, rec_spike_times_step):
+    "Setp number of time steps for buffering spike time recording"
+    if type(nodes)!=NodeSeq:
+        raise ValueError("Argument type of SetRecSpikeTimesStep must be NodeSeq")
+
+    ret = ng_kernel.llapi_setRecSpikeTimesStep(nodes.i0, nodes.n,
+                                       rec_spike_times_step)
+    return ret
+
+def GetStatus(gen_object, var_key=None):
+    "Get neuron group, connection or synapse group status"
+    print('nestgpu.py, GetStatus(), gen_object type: {}, gen_object: {}'.format(
+        type(gen_object), gen_object))
+    if type(gen_object)==SynGroup:
+        return GetSynGroupStatus(gen_object, var_key)
+
+    if type(gen_object)==NodeSeq:
+        gen_object = gen_object.ToList()
+    if (type(gen_object)==list) | (type(gen_object)==tuple):
+        status_list = []
+        for gen_elem in gen_object:
+            elem_dict = GetStatus(gen_elem, var_key)
+            status_list.append(elem_dict)
+        return status_list
+    if (type(var_key)==list) | (type(var_key)==tuple):
+        status_list = []
+        for var_elem in var_key:
+            var_value = GetStatus(gen_object, var_elem)
+            status_list.append(var_value)
+        return status_list
+    elif (var_key==None):
+        if (type(gen_object)==ConnectionId):
+            status_dict = GetConnectionStatus(gen_object)
+        elif (type(gen_object)==int):
+            i_node = gen_object
+            status_dict = {}
+            name_list = GetIntVarNames(i_node) \
+                        + GetScalVarNames(i_node) + GetScalParamNames(i_node) \
+                        + GetPortVarNames(i_node) + GetPortParamNames(i_node) \
+                        + GetArrayVarNames(i_node) \
+                        + GetArrayParamNames(i_node) \
+                        + GetGroupParamNames(i_node)
+            for var_name in name_list:
+                val = GetStatus(i_node, var_name)
+                status_dict[var_name] = val
+        else:
+            raise ValueError("Unknown object type in GetStatus")
+        return status_dict
+    elif (type(var_key)==str) | (type(var_key)==bytes):
+        if (type(gen_object)==ConnectionId):
+            print('type(gen_object)==ConnectionId')
+            status_dict = GetConnectionStatus(gen_object)
+            return status_dict[var_key]
+        elif (type(gen_object)==int):
+            print('type(gen_object)==int')
+            i_node = gen_object
+            return GetNeuronStatus([i_node], var_key)[0]
+        else:
+            raise ValueError("Unknown object type in GetStatus")
+
+    else:
+        raise ValueError("Unknown key type in GetStatus", type(var_key))
+
+def GetRecSpikeTimes(nodes):
+    if type(nodes)!=NodeSeq:
+        raise ValueError("First argument type of GetRecSpikeTimes must be NodeSeq")
+
+    ret = ng_kernel.llapi_getRecSpikeTimes(nodes.i0, nodes.n)
+    return ret

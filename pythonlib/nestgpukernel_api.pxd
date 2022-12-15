@@ -132,6 +132,17 @@ cdef extern from "nestgpu_C.h":
     float *NESTGPU_GetArrayVar(int i_node, char *var_name)
     int NESTGPU_ConnectMpiInit(int argc, char *argv[])
     int NESTGPU_MpiNp()
+    int NESTGPU_GetRecSpikeTimes(int i_node, int n_node,
+                   int **n_spike_times_pt,
+                   float ***spike_times_pt)
+    int NESTGPU_ActivateSpikeCount(int i_node, int n_node)
+    int NESTGPU_ActivateRecSpikeTimes(int i_node, int n_node,
+                      int max_n_rec_spike_times)
+    int NESTGPU_SetRecSpikeTimesStep(int i_node, int n_node,
+                   int rec_spike_times_step)
+    int NESTGPU_GetSynGroupNParam(int i_syn_group)
+    char **NESTGPU_GetSynGroupParamNames(int i_syn_group)
+    float NESTGPU_GetSynGroupParam(int i_syn_group, char *param_name)
 
 
 '''
@@ -162,20 +173,9 @@ cdef extern from "nestgpu_C.h":
                     unsigned char *syn_group, float *delay,
                     float *weight)
     int NESTGPU_CreateSynGroup(char *model_name)
-    int NESTGPU_GetSynGroupNParam(int i_syn_group)
-    char **NESTGPU_GetSynGroupParamNames(int i_syn_group)
     int NESTGPU_IsSynGroupParam(int i_syn_group, char *param_name)
     int NESTGPU_GetSynGroupParamIdx(int i_syn_group, char *param_name)
-    float NESTGPU_GetSynGroupParam(int i_syn_group, char *param_name)
-    int NESTGPU_ActivateSpikeCount(int i_node, int n_node)
-    int NESTGPU_ActivateRecSpikeTimes(int i_node, int n_node,
-                      int max_n_rec_spike_times)
-    int NESTGPU_SetRecSpikeTimesStep(int i_node, int n_node,
-                   int rec_spike_times_step)
     int NESTGPU_GetNRecSpikeTimes(int i_node)
-    int NESTGPU_GetRecSpikeTimes(int i_node, int n_node,
-                   int **n_spike_times_pt,
-                   float ***spike_times_pt)
     int NESTGPU_PushSpikesToNodes(int n_spikes, int *node_id)
     int NESTGPU_GetExtNeuronInputSpikes(int *n_spikes, int **node, int **port,
                     float **spike_height,
@@ -183,7 +183,6 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_GetBoolParamIdx(char *param_name)
     int NESTGPU_GetFloatParamIdx(char *param_name)
     int NESTGPU_GetIntParamIdx(char *param_name)
-    int NESTGPU_SetIntParam(char *param_name, int val)
     int NESTGPU_RemoteCreate(int i_host, char *model_name, int n_neuron,
                  int n_port)
 '''

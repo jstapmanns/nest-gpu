@@ -74,10 +74,10 @@ for row in data_list[0:len(data_list)]:
             
 
 spike = row_sum[1:len(row_sum)]
-#print (spike)
+print ('spike: {}'.format(spike))
 
 spike_count = ngpu.GetStatus(neuron, "spike_count")
-#print (spike_count)
+print ('spike_count: {}'.format(spike_count))
 
 if (len(spike) != len(spike_count)):
     print("Error: len(spike) != len(spike_count)")
@@ -88,11 +88,11 @@ if (len(spike) != len(spike_count)):
 for i in range(len(spike)):
     #print spike_count[i][0]
     #print (spike_count[i], spike[i])
-    diff = spike[i] - spike_count[i][0]
+    diff = spike[i] - spike_count[i]
     if abs(diff) > eps:
         print("Error: inconsistent number of spikes of node n. ", i)
         print("spike detector count ", spike[i])
-        print("node count ", spike_count[i][0])
+        print("node count ", spike_count[i])
         sys.exit(1)
         
 if (len(spike_times) != len(neuron)):

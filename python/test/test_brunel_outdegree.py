@@ -12,6 +12,11 @@ print("Building ...")
 
 ngpu.SetKernelStatus("rnd_seed", 1234) # seed for GPU random numbers
 
+ngpu.SetTimeResolution(0.1)
+print("max buffer size: {}".format(ngpu.GetMaxSpikeBufferSize()))
+print("time resolution: {}".format(ngpu.GetTimeResolution()))
+ngpu.SetRandomSeed(302687)
+
 n_receptors = 2
 
 NE = 4 * order       # number of excitatory neurons

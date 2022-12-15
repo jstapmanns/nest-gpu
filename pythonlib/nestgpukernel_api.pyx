@@ -4,7 +4,7 @@ from cython cimport view
 from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 cimport llapi_helpers as llapi_h
-from llapi_helpers import SynGroup
+from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId
 
 '''
 helping functions
@@ -98,6 +98,44 @@ cdef int GetNeuronVarSize(int i_node, object var_name):
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+cdef int GetSynGroupNParam(syn_group):
+    "Get number of synapse parameters for a given synapse group"
+    if type(syn_group)!=SynGroup:
+        raise ValueError("Wrong argument type in GetSynGroupNParam")
+    cdef int i_syn_group = syn_group.i_syn_group
+    cdef int ret = NESTGPU_GetSynGroupNParam(i_syn_group)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetSynGroupParamNames(object syn_group):
+    "Get list of synapse group parameter names"
+    if type(syn_group)!=SynGroup:
+        raise ValueError("Wrong argument type in GetSynGroupParamNames")
+    cdef int i_syn_group = syn_group.i_syn_group
+    cdef int n_param = GetSynGroupNParam(syn_group)
+    cdef char** param_name_pp = NESTGPU_GetSynGroupParamNames(i_syn_group)
+    cdef char* param_name_p
+    cdef list param_name_list = []
+    for i in range(n_param):
+        param_name_p = param_name_pp[i]
+        param_name_list.append(llapi_h.cstring_to_pystring(param_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return param_name_list
+
+cdef float GetSynGroupParam(object syn_group, object param_name):
+    "Get synapse group parameter value"
+    if type(syn_group)!=SynGroup:
+        raise ValueError("Wrong argument type in GetSynGroupParam")
+    cdef int i_syn_group = syn_group.i_syn_group
+    ret = NESTGPU_GetSynGroupParam(i_syn_group, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
 
 '''
 low level api
@@ -826,6 +864,8 @@ def llapi_getNeuronPtIntVar(object nodes, object var_name):
                                           n_node, var_name.encode('utf-8'))
     data_array = numpy.asarray(<int[:n_node]>first)
     ret = data_array
+    print('nestgpukernel_api.pyx, llapi_getNeuronPtIntVar(), array:')
+    print(ret)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -889,4 +929,68 @@ def llapi_mpiNp():
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+def llapi_getRecSpikeTimes(int i_node, int n_node):
+    "Get recorded spike times for node group"
+
+    cdef int** n_spike_times_pt
+    cdef float*** spike_times_pt
+    spike_time_list = []
+    print('nestgpukernel_api.pyx, llapi_getRecSpikeTimes()')
+    ret1 = NESTGPU_GetRecSpikeTimes(i_node, n_node,
+                                    n_spike_times_pt, spike_times_pt)
+    for i_n in range(n_node):
+        spike_time_list.append([])
+        n_spike = n_spike_times_pt[0][i_n]
+        for i_spike in range(n_spike):
+            spike_time_list[i_n].append(spike_times_pt[0][i_n][i_spike])
+
+    ret = spike_time_list
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+def llapi_activateSpikeCount(int i_node, int n_node):
+    "Activate spike count for node group"
+    ret = NESTGPU_ActivateSpikeCount(i_node, n_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+def llapi_activateRecSpikeTimes(int i_node, int n_node, int max_n_rec_spike_times):
+    "Activate spike time recording for node group"
+    ret = NESTGPU_ActivateRecSpikeTimes(i_node, n_node, max_n_rec_spike_times)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+def llapi_setRecSpikeTimesStep(int i_node, int n_node, int rec_spike_times_step):
+    "Setp number of time steps for buffering spike time recording"
+    ret = NESTGPU_SetRecSpikeTimesStep(i_node, n_node, rec_spike_times_step)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+def llapi_getSynGroupStatus(object syn_group, object var_key=None):
+    "Get synapse group status"
+    if type(syn_group)!=SynGroup:
+        raise ValueError("Wrong argument type in GetSynGroupStatus")
+    if (type(var_key)==list) | (type(var_key)==tuple):
+        status_list = []
+        for var_elem in var_key:
+            var_value = llapi_getSynGroupStatus(syn_group, var_elem)
+            status_list.append(var_value)
+        return status_list
+    elif (var_key==None):
+        status_dict = {}
+        name_list = GetSynGroupParamNames(syn_group)
+        for param_name in name_list:
+            val = llapi_getSynGroupStatus(syn_group, param_name)
+            status_dict[param_name] = val
+        return status_dict
+    elif (type(var_key)==str) | (type(var_key)==bytes):
+            return GetSynGroupParam(syn_group, var_key)
+    else:
+        raise ValueError("Unknown key type in GetSynGroupStatus", type(var_key))
 
