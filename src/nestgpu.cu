@@ -1550,10 +1550,8 @@ int NESTGPU::GetRecSpikeTimes(int i_node, int n_node, int **n_spike_times_pt,
     throw ngpu_exception("Spike times must be extracted for all and only "
 			 " the nodes of the same group");
   }
-  std::cout << "nestgpu.cu, GetRecSpikeTimes()" << std::endl;
   return node_vect_[i_group]->GetRecSpikeTimes(n_spike_times_pt,
-					       spike_times_pt);
-					       
+    spike_times_pt);
 }
 
 int NESTGPU::PushSpikesToNodes(int n_spikes, int *node_id,

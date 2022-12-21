@@ -79,6 +79,7 @@ cdef object RandomNormal(size_t n, float mean, float stddev):
 cdef object RandomNormalClipped(size_t n, float mean, float stddev,
         float vmin, float vmax, float vstep=0):
     "Generate n random floats with normal clipped distribution in CUDA memory"
+    print('RandomNormalClipped() in nestgpukernel_api.pyx, n: {}, mean: {}, stddev: {}, vmin: {}, vmax: {}, vstep: {}'.format(n, mean, stddev, vmin, vmax, vstep))
     cdef float* first = NESTGPU_RandomNormalClipped(n, mean, stddev, vmin, vmax, vstep)
     ret = numpy.asarray(<float[:n]>first)
     if llapi_getErrorCode() != 0:
@@ -131,7 +132,63 @@ cdef float GetSynGroupParam(object syn_group, object param_name):
     if type(syn_group)!=SynGroup:
         raise ValueError("Wrong argument type in GetSynGroupParam")
     cdef int i_syn_group = syn_group.i_syn_group
-    ret = NESTGPU_GetSynGroupParam(i_syn_group, param_name.encode('utf-8'))
+    cdef float ret = NESTGPU_GetSynGroupParam(i_syn_group, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNIntVar(int i_node):
+    "Get number of integer variables for a given node"
+    cdef int ret = NESTGPU_GetNIntVar(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNScalVar(int i_node):
+    "Get number of scalar variables for a given node"
+    cdef int ret = NESTGPU_GetNScalVar(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNScalParam(int i_node):
+    "Get number of scalar parameters for a given node"
+    cdef int ret = NESTGPU_GetNScalParam(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNPortVar(int i_node):
+    "Get number of scalar variables for a given node"
+    cdef int ret = NESTGPU_GetNPortVar(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNPortParam(int i_node):
+    "Get number of scalar parameters for a given node"
+    cdef int ret = NESTGPU_GetNPortParam(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNArrayVar(int i_node):
+    "Get number of scalar variables for a given node"
+    cdef int ret = NESTGPU_GetNArrayVar(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNArrayParam(int i_node):
+    "Get number of scalar parameters for a given node"
+    cdef int ret = NESTGPU_GetNArrayParam(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int GetNGroupParam(int i_node):
+    "Get number of scalar parameters for a given node"
+    cdef int ret = NESTGPU_GetNGroupParam(i_node)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -221,9 +278,12 @@ def llapi_ruleArraySize(conn_dict, source, target):
         array_size = len(source)*conn_dict["outdegree"]
     else:
         raise ValueError("Unknown number of connections for this rule")
+    print('llapi_ruleArraySize(), rule: {}, array_size: {}'.format(
+        conn_dict['rule'], array_size))
     return array_size
 
 def llapi_setSynParamFromArray(param_name, par_dict, array_size):
+    print('using llapi_setSynParamFromArray to set {}'.format(param_name))
     arr_param_name = param_name + "_array"
     if (not llapi_synSpecIsFloatPtParam(arr_param_name)):
         raise ValueError("Synapse parameter cannot be set by arrays or distributions")
@@ -304,6 +364,7 @@ def llapi_dictToArray(param_dict, array_size):
     elif dist_name=="normal":
         return RandomNormal(array_size, mu, sigma)
     elif dist_name=="normal_clipped":
+        print('llapi_dictToArray() in nestgpukernel_api.py, n: {}, mu: {}, sigma: {}, low: {}, high: {}, vstep:{}'.format(array_size, mu, sigma, low, high, vstep))
         return RandomNormalClipped(array_size, mu, sigma, low, high, vstep)
     else:
         raise ValueError("Unknown distribution")
@@ -727,8 +788,9 @@ def llapi_isNeuronArrayVar(int i_node, object var_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
-def llapi_setNeuronGroupParam(int i_node, int n_node, object param_name, float val):
-    ret = NESTGPU_SetNeuronGroupParam(i_node, n_node, param_name.encode('utf-8'), val)
+def llapi_setNeuronGroupParam(object nodes, object param_name, float val):
+    ret = NESTGPU_SetNeuronGroupParam(nodes.i0, nodes.n,
+            param_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -863,9 +925,9 @@ def llapi_getNeuronPtIntVar(object nodes, object var_name):
     cdef int* first = NESTGPU_GetNeuronPtIntVar(&llapi_h.pylist_to_int_vec(nodes)[0],
                                           n_node, var_name.encode('utf-8'))
     data_array = numpy.asarray(<int[:n_node]>first)
-    ret = data_array
-    print('nestgpukernel_api.pyx, llapi_getNeuronPtIntVar(), array:')
-    print(ret)
+    # TODO: the reshaping below is required for compatibility but seems unnecessary
+    # because it simply adds an extra dimension which is removed in GetStatus()
+    ret = data_array.reshape((n_node,1))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -932,21 +994,19 @@ def llapi_mpiNp():
 
 def llapi_getRecSpikeTimes(int i_node, int n_node):
     "Get recorded spike times for node group"
-
-    cdef int** n_spike_times_pt
-    cdef float*** spike_times_pt
+    print('using cython llapi_getRecSpikeTimes()')
+    cdef int* n_spike_times_pt
+    cdef float** spike_times_pt
     spike_time_list = []
-    print('nestgpukernel_api.pyx, llapi_getRecSpikeTimes()')
     ret1 = NESTGPU_GetRecSpikeTimes(i_node, n_node,
-                                    n_spike_times_pt, spike_times_pt)
+                                    &n_spike_times_pt, &spike_times_pt)
     for i_n in range(n_node):
         spike_time_list.append([])
-        n_spike = n_spike_times_pt[0][i_n]
+        n_spike = n_spike_times_pt[i_n]
         for i_spike in range(n_spike):
-            spike_time_list[i_n].append(spike_times_pt[0][i_n][i_spike])
+            spike_time_list[i_n].append(spike_times_pt[i_n][i_spike])
 
     ret = spike_time_list
-
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -993,4 +1053,116 @@ def llapi_getSynGroupStatus(object syn_group, object var_key=None):
             return GetSynGroupParam(syn_group, var_key)
     else:
         raise ValueError("Unknown key type in GetSynGroupStatus", type(var_key))
+
+def llapi_getIntVarNames(int i_node):
+    "Get list of scalar variable names"
+    cdef int n_var = GetNIntVar(i_node)
+    cdef char** var_name_pp = NESTGPU_GetIntVarNames(i_node)
+    cdef char* var_name_p
+    var_name_list = []
+    for i in range(n_var):
+        var_name_p = var_name_pp[i]
+        var_name_list.append(llapi_h.cstring_to_pystring(var_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return var_name_list
+
+def llapi_getScalVarNames(int i_node):
+    "Get list of scalar variable names"
+    cdef int n_var = GetNScalVar(i_node)
+    cdef char** var_name_pp = NESTGPU_GetScalVarNames(i_node)
+    cdef char* var_name_p
+    var_name_list = []
+    for i in range(n_var):
+        var_name_p = var_name_pp[i]
+        var_name_list.append(llapi_h.cstring_to_pystring(var_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return var_name_list
+
+def llapi_getScalParamNames(int i_node):
+    "Get list of scalar parameter names"
+    cdef int n_param = GetNScalParam(i_node)
+    cdef char** param_name_pp = NESTGPU_GetScalParamNames(i_node)
+    cdef char* param_name_p
+    param_name_list = []
+    for i in range(n_param):
+        param_name_p = param_name_pp[i]
+        param_name_list.append(llapi_h.cstring_to_pystring(param_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return param_name_list
+
+def llapi_getPortVarNames(int i_node):
+    "Get list of scalar variable names"
+    cdef int n_var = GetNPortVar(i_node)
+    cdef char** var_name_pp = NESTGPU_GetPortVarNames(i_node)
+    cdef char* var_name_p
+    var_name_list = []
+    for i in range(n_var):
+        var_name_p = var_name_pp[i]
+        var_name_list.append(llapi_h.cstring_to_pystring(var_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return var_name_list
+
+def GetPortParamNames(int i_node):
+    "Get list of scalar parameter names"
+    cdef int n_param = GetNPortParam(i_node)
+    cdef char** param_name_pp = NESTGPU_GetPortParamNames(i_node)
+    cdef char* param_name_p
+    param_name_list = []
+    for i in range(n_param):
+        param_name_p = param_name_pp[i]
+        param_name_list.append(llapi_h.cstring_to_pystring(param_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return param_name_list
+
+def GetArrayVarNames(int i_node):
+    "Get list of scalar variable names"
+    cdef int n_var = GetNArrayVar(i_node)
+    cdef char** var_name_pp = NESTGPU_GetArrayVarNames(i_node)
+    cdef char* var_name_p
+    var_name_list = []
+    for i in range(n_var):
+        var_name_p = var_name_pp[i]
+        var_name_list.append(llapi_h.cstring_to_pystring(var_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return var_name_list
+
+def GetArrayParamNames(int i_node):
+    "Get list of scalar parameter names"
+    cdef int n_param = GetNArrayParam(i_node)
+    cdef char** param_name_pp = NESTGPU_GetArrayParamNames(i_node)
+    cdef char* param_name_p
+    param_name_list = []
+    for i in range(n_param):
+        param_name_p = param_name_pp[i]
+        param_name_list.append(llapi_h.cstring_to_pystring(param_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return param_name_list
+
+def GetGroupParamNames(int i_node):
+    "Get list of scalar parameter names"
+    cdef int n_param = GetNGroupParam(i_node)
+    cdef char** param_name_pp = NESTGPU_GetGroupParamNames(i_node)
+    cdef char* param_name_p
+    param_name_list = []
+    for i in range(n_param):
+        param_name_p = param_name_pp[i]
+        param_name_list.append(llapi_h.cstring_to_pystring(param_name_p))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return param_name_list
 
