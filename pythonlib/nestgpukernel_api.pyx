@@ -79,7 +79,6 @@ cdef object RandomNormal(size_t n, float mean, float stddev):
 cdef object RandomNormalClipped(size_t n, float mean, float stddev,
         float vmin, float vmax, float vstep=0):
     "Generate n random floats with normal clipped distribution in CUDA memory"
-    print('RandomNormalClipped() in nestgpukernel_api.pyx, n: {}, mean: {}, stddev: {}, vmin: {}, vmax: {}, vstep: {}'.format(n, mean, stddev, vmin, vmax, vstep))
     cdef float* first = NESTGPU_RandomNormalClipped(n, mean, stddev, vmin, vmax, vstep)
     ret = numpy.asarray(<float[:n]>first)
     if llapi_getErrorCode() != 0:
@@ -278,8 +277,6 @@ def llapi_ruleArraySize(conn_dict, source, target):
         array_size = len(source)*conn_dict["outdegree"]
     else:
         raise ValueError("Unknown number of connections for this rule")
-    print('llapi_ruleArraySize(), rule: {}, array_size: {}'.format(
-        conn_dict['rule'], array_size))
     return array_size
 
 def llapi_setSynParamFromArray(param_name, par_dict, array_size):
@@ -364,7 +361,6 @@ def llapi_dictToArray(param_dict, array_size):
     elif dist_name=="normal":
         return RandomNormal(array_size, mu, sigma)
     elif dist_name=="normal_clipped":
-        print('llapi_dictToArray() in nestgpukernel_api.py, n: {}, mu: {}, sigma: {}, low: {}, high: {}, vstep:{}'.format(array_size, mu, sigma, low, high, vstep))
         return RandomNormalClipped(array_size, mu, sigma, low, high, vstep)
     else:
         raise ValueError("Unknown distribution")

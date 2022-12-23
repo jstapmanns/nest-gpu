@@ -93,11 +93,9 @@ def GetRecordData(i_record):
 
 def GetNeuronStatus(nodes, var_name):
     "Get neuron group scalar or array variable or parameter"
-    #print('nestgpu.py GetNeuronStatus()')
     if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
         raise ValueError("Unknown node type")
     if type(nodes)==NodeSeq:
-        #print('GetNeuronStatus() nodes is NodeSeq')
         if (ng_kernel.llapi_isNeuronScalParam(nodes.i0, var_name) |
             ng_kernel.llapi_isNeuronPortParam(nodes.i0, var_name)):
             ret = ng_kernel.llapi_getNeuronParam(nodes.i0, nodes.n, var_name)
@@ -115,33 +113,24 @@ def GetNeuronStatus(nodes, var_name):
         else:
             raise ValueError("Unknown neuron variable or parameter")
     else:
-        #print('GetNeuronStatus() nodes is not a NodeSeq')
         if (ng_kernel.llapi_isNeuronScalParam(nodes[0], var_name) |
             ng_kernel.llapi_isNeuronPortParam(nodes[0], var_name)):
-            #print('case 1')
             ret = ng_kernel.llapi_getNeuronPtParam(nodes, var_name)
         elif ng_kernel.llapi_isNeuronArrayParam(nodes[0], var_name):
-            #print('case 2')
             ret = ng_kernel.llapi_getNeuronListArrayParam(nodes, var_name)
         elif (ng_kernel.llapi_isNeuronIntVar(nodes[0], var_name)):
-            #print('case 3')
-            #print('nodes: {}'.format(nodes))
             ret = ng_kernel.llapi_getNeuronPtIntVar(nodes, var_name)
         elif (ng_kernel.llapi_isNeuronScalVar(nodes[0], var_name) |
               ng_kernel.llapi_isNeuronPortVar(nodes[0], var_name)):
-            #print('case 4')
             ret = ng_kernel.llapi_getNeuronPtVar(nodes, var_name)
         elif ng_kernel.llapi_isNeuronArrayVar(nodes[0], var_name):
-            #print('case 5')
             ret = ng_kernel.llapi_getNeuronListArrayVar(nodes, var_name)
         elif ng_kernel.llapi_isNeuronGroupParam(nodes[0], var_name):
-            #print('case 6')
             ret = []
             for i_node in nodes:
                 ret.append(ng_kernel.llapi_getNeuronGroupParam(i_node, var_name))
         else:
             raise ValueError("Unknown neuron variable or parameter")
-    #print('nestgpu.py, GetNeuronStatus(), ret: {}, type: {}'.format(ret, type(ret)))
     return ret
 
 def SetNeuronStatus(nodes, var_name, val):
@@ -239,8 +228,12 @@ def Connect(source, target, conn_dict, syn_dict):
         elif ng_kernel.llapi_synSpecIsFloatParam(param_name):
             fpar = syn_dict[param_name]
             if (type(fpar)==dict):
-                print('we are here in nestgpu.py')
-                ng_kernel.llapi_setSynParamFromArray(param_name, fpar, array_size)
+                # TODO: in the old version of the api, one does not have to exclude the
+                # case array_size == 0. However, here it would throw an error message
+                # and moreover, it seems unnecessary to pass a non-existing array to the
+                # c++ code.
+                if not (array_size == 0):
+                    ng_kernel.llapi_setSynParamFromArray(param_name, fpar, array_size)
             else:
                 ng_kernel.llapi_setSynSpecFloatParam(param_name, fpar)
 

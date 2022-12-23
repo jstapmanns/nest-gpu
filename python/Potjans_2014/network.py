@@ -215,7 +215,6 @@ class Network:
         self.num_synapses = np.round((full_num_synapses *
                                       self.net_dict['N_scaling'] *
                                       self.net_dict['K_scaling'])).astype(int)
-        print('network.py, num_synapses: {}'.format(self.num_synapses))
         self.ext_indegrees = np.round((self.net_dict['K_ext'] *
                                        self.net_dict['K_scaling'])).astype(int)
 
@@ -475,9 +474,6 @@ class Network:
                                        'sigma':d_std}}
                         #'receptor':i_receptor}
 
-                    print('Connect() in network.py, mu:{}, low:{}, high:{}, sigma:{}'.format(w_mean, w_min, w_max, w_std))
-                    print('type(sources): {}, n_sources: {}, type(targets): {}, n_targets: {}'.format(
-                        type(source_pop), source_pop.n, type(target_pop), target_pop.n))
                     ngpu.Connect(
                         source_pop, target_pop, conn_dict_rec, syn_dict)
 
