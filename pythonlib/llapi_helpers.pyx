@@ -5,6 +5,8 @@ from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 from libcpp.vector cimport vector
 
+import time
+
 '''
 class definitions
 '''
@@ -129,6 +131,7 @@ cdef float* np_float_array_to_pointer(object array):
     if not numpy.issubdtype(array.dtype, numpy.float32):
         raise TypeError('array must be a NumPy array of floats, got {}'.format(array.dtype))
 
+    start_time = time.process_time() #perf_counter()
     cdef float* array_float_ptr
     # TODO: the commented code using memory view does not seem to be a safe way to obtain a pointer
     #       to the first element of the array because tests revealed that the life time of the array
@@ -152,6 +155,9 @@ cdef float* np_float_array_to_pointer(object array):
     #for val in array:
     #    c_array.push_back(val)
     array_float_ptr = &c_array[0]
+    end_time = time.process_time() #perf_counter()
+    total_time = end_time - start_time
+    print(f'Function np_float_array_to_pointer Took {total_time:.4f} seconds')
     return array_float_ptr
 
 cdef long* np_long_array_to_pointer(object array):

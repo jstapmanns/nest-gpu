@@ -25,10 +25,17 @@ Main file of the microcircuit defining the ``Network`` class with functions to
 build and simulate the network.
 
 """
-
+mode = 'old' #'new'
 import os
 import numpy as np
-import nestgpu as ngpu
+if mode == 'new':
+    import nestgpu as ngpu
+    print('running cython version')
+elif mode == 'old':
+    import nestgpu_main as ngpu
+    print('running ctypes version')
+else:
+    print('unknown mode {}'.format(mode))
 import helpers
 
 

@@ -6,6 +6,21 @@ from libc.stdlib cimport malloc, free
 cimport llapi_helpers as llapi_h
 from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId
 
+from functools import wraps
+import time
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.process_time() #perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.process_time() #perf_counter()
+        total_time = end_time - start_time
+        if total_time > 1.0:
+            print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+
+        return result
+    return timeit_wrapper
+
 '''
 helping functions
 '''
@@ -207,6 +222,7 @@ def llapi_mpiId():
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_connSpecInit():
     "Initialize connection rules specification"
     ret = NESTGPU_ConnSpecInit()
@@ -214,6 +230,7 @@ def llapi_connSpecInit():
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_setConnSpecParam(object param_name, int val):
     "Set connection parameter"
     ret = NESTGPU_SetConnSpecParam(param_name.encode('utf-8'), val)
@@ -221,6 +238,7 @@ def llapi_setConnSpecParam(object param_name, int val):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_connSpecIsParam(object param_name):
     "Check name of connection parameter"
     ret = (NESTGPU_ConnSpecIsParam(param_name.encode('utf-8')) != 0)
@@ -228,6 +246,7 @@ def llapi_connSpecIsParam(object param_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_synSpecInit():
     "Initializa synapse specification"
     ret = NESTGPU_SynSpecInit()
@@ -235,6 +254,7 @@ def llapi_synSpecInit():
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_setSynSpecIntParam(object param_name, int val):
     "Set synapse int parameter"
     ret = NESTGPU_SetSynSpecIntParam(param_name.encode('utf-8'), val)
@@ -242,6 +262,7 @@ def llapi_setSynSpecIntParam(object param_name, int val):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_setSynSpecFloatParam(object param_name, float val):
     "Set synapse float parameter"
     ret = NESTGPU_SetSynSpecFloatParam(param_name.encode('utf-8'), val)
@@ -249,6 +270,7 @@ def llapi_setSynSpecFloatParam(object param_name, float val):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_setSynSpecFloatPtParam(object param_name, object arr):
     "Set synapse pointer to float parameter"
     array = numpy.array(arr, dtype=numpy.float32, copy=True, order='C')
@@ -264,6 +286,7 @@ def llapi_setSynSpecFloatPtParam(object param_name, object arr):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_ruleArraySize(conn_dict, source, target):
     if conn_dict["rule"]=="one_to_one":
         array_size = len(source)
@@ -279,6 +302,7 @@ def llapi_ruleArraySize(conn_dict, source, target):
         raise ValueError("Unknown number of connections for this rule")
     return array_size
 
+@timeit
 def llapi_setSynParamFromArray(param_name, par_dict, array_size):
     print('using llapi_setSynParamFromArray to set {}'.format(param_name))
     arr_param_name = param_name + "_array"
@@ -301,6 +325,7 @@ def llapi_setSynGroupStatus(syn_group, params, val=None):
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
 
+@timeit
 def llapi_synSpecIsIntParam(object param_name):
     "Check name of synapse int parameter"
     ret = (NESTGPU_SynSpecIsIntParam(param_name.encode('utf-8')) != 0)
@@ -308,6 +333,7 @@ def llapi_synSpecIsIntParam(object param_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_synSpecIsFloatParam(object param_name):
     "Check name of synapse float parameter"
     ret = (NESTGPU_SynSpecIsFloatParam(param_name.encode('utf-8')) != 0)
@@ -315,6 +341,7 @@ def llapi_synSpecIsFloatParam(object param_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_synSpecIsFloatPtParam(object param_name):
     "Check name of synapse pointer to float parameter"
     ret = (NESTGPU_SynSpecIsFloatPtParam(param_name.encode('utf-8')) != 0)
@@ -322,6 +349,7 @@ def llapi_synSpecIsFloatPtParam(object param_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_dictToArray(param_dict, array_size):
     dist_name = None
     arr = None
@@ -476,69 +504,79 @@ def llapi_getErrorMessage():
     #ret = ''.join(np.char.decode(np_byte_array, encoding='utf-8'))
     return llapi_h.cstring_to_pystring(err_message)
 
+@timeit
 def llapi_connect(int i_source_node, int i_target_node,
 			unsigned char port, unsigned char syn_group,
             float weight, float delay):
-    print('using cython llapi_connect()')
+    #print('using cython llapi_connect()')
     return NESTGPU_Connect(i_source_node, i_target_node,port, syn_group,
             weight, delay)
 
+@timeit
 def llapi_connectSeqSeq(int i_source, int n_source, int i_target, int n_target):
-    print('using cython llapi_connectSeqSeq()')
+    #print('using cython llapi_connectSeqSeq()')
     return NESTGPU_ConnectSeqSeq(i_source, n_source, i_target, n_target)
 
+@timeit
 def llapi_connectSeqGroup(int i_source, int n_source, object i_target, int n_target):
-    print('using cython llapi_connectSeqGroup()')
+    #print('using cython llapi_connectSeqGroup()')
     # TODO: The following line leads to unexpected behaviour if the indices in i_target
     #       are > 2147483647, which is the maximum int32.
     array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
     return NESTGPU_ConnectSeqGroup(i_source, n_source,
             llapi_h.np_int_array_to_pointer(array), n_target)
 
+@timeit
 def llapi_connectGroupSeq(object i_source, int n_source, int i_target, int n_target):
-    print('using cython llapi_connectGroupSeq()')
+    #print('using cython llapi_connectGroupSeq()')
     array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
     return NESTGPU_ConnectGroupSeq(llapi_h.np_int_array_to_pointer(array),
             n_source, i_target, n_target)
 
+@timeit
 def llapi_connectGroupGroup(object i_source, int n_source, object i_target, int n_target):
-    print('using cython llapi_connectGroupGroup()')
+    #print('using cython llapi_connectGroupGroup()')
     source_array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
     target_array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
     return NESTGPU_ConnectGroupGroup(llapi_h.np_int_array_to_pointer(source_array),
             n_source, llapi_h.np_int_array_to_pointer(target_array), n_target)
 
+@timeit
 def llapi_remoteConnectSeqSeq(int i_source_host, int i_source, int n_source,
         int i_target_host, int i_target, int n_target):
-    print('using cython llapi_remoteConnectSeqSeq()')
+    #print('using cython llapi_remoteConnectSeqSeq()')
     return NESTGPU_RemoteConnectSeqSeq(i_source_host, i_source, n_source,
             i_target_host, i_target, n_target)
 
+@timeit
 def llapi_remoteConnectSeqGroup(int i_source_host, int i_source, int n_source,
         int i_target_host, object i_target, int n_target):
-    print('using cython llapi_remoteConnectSeqGroup()')
+    #print('using cython llapi_remoteConnectSeqGroup()')
     array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
     return NESTGPU_RemoteConnectSeqGroup(i_source_host, i_source, n_source,
             i_target_host, llapi_h.np_int_array_to_pointer(array), n_target)
 
+@timeit
 def llapi_remoteConnectGroupSeq(int i_source_host, object i_source, int n_source,
         int i_target_host, int i_target, int n_target):
-    print('using cython llapi_remoteConnectGroupSeq()')
+    #print('using cython llapi_remoteConnectGroupSeq()')
     array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
     return NESTGPU_RemoteConnectGroupSeq(i_source_host, llapi_h.np_int_array_to_pointer(array),
             n_source, i_target_host, i_target, n_target)
 
+@timeit
 def llapi_remoteConnectGroupGroup(int i_source_host, object i_source, int n_source,
         int i_target_host, object i_target, int n_target):
-    print('using cython llapi_remoteConnectGroupGroup()')
+    #print('using cython llapi_remoteConnectGroupGroup()')
     source_array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
     target_array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
     return NESTGPU_RemoteConnectGroupGroup(i_source_host,
             llapi_h.np_int_array_to_pointer(source_array), n_source,
             i_target_host, llapi_h.np_int_array_to_pointer(target_array), n_target)
 
+@timeit
 def llapi_create(model, int n, int n_port):
-    print('using cython llapi_create() to create {} {}(s)'.format(n, model))
+    #print('using cython llapi_create() to create {} {}(s)'.format(n, model))
     return NESTGPU_Create(model.encode('utf-8'), n, n_port)
 
 # TODO: should we change all the char* arguments to string as it is done in NEST?
@@ -546,6 +584,7 @@ def llapi_create(model, int n, int n_port):
 # TODO: can we make use of boost? (not necessary but the new NEST api does, I think.
 # TODO: Does it make sense to replace python lists by numpy arrays?
 
+@timeit
 def llapi_getSeqSeqConnections(int i_source, int n_source, int i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getSeqSeqConnections()')
@@ -555,6 +594,7 @@ def llapi_getSeqSeqConnections(int i_source, int n_source, int i_target,
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
     return ret
 
+@timeit
 def llapi_getSeqGroupConnections(int i_source, int n_source, object i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getSeqGroupConnections()')
@@ -566,6 +606,7 @@ def llapi_getSeqGroupConnections(int i_source, int n_source, object i_target,
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
     return ret
 
+@timeit
 def llapi_getGroupSeqConnections(object i_source, int n_source, int i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getGroupSeqConnections()')
@@ -579,6 +620,7 @@ def llapi_getGroupSeqConnections(object i_source, int n_source, int i_target,
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
     return ret
 
+@timeit
 def llapi_getGroupGroupConnections(object i_source, int n_source, object i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getGroupGroupConnections()')
@@ -591,9 +633,10 @@ def llapi_getGroupGroupConnections(object i_source, int n_source, object i_targe
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
     return ret
 
+@timeit
 def llapi_createRecord(object file_name, object var_name_arr,
         object i_node_arr, object port_arr, int n_node):
-    print('using cython llapi_createRecord()')
+    #print('using cython llapi_createRecord()')
     node_array = numpy.array(i_node_arr, dtype=numpy.int32, copy=True, order='C')
     port_array = numpy.array(port_arr, dtype=numpy.int32, copy=True, order='C')
     ret = NESTGPU_CreateRecord(file_name.encode('utf-8'),
@@ -602,8 +645,9 @@ def llapi_createRecord(object file_name, object var_name_arr,
             llapi_h.np_int_array_to_pointer(port_array), n_node)
     return ret
 
+@timeit
 def llapi_getRecordData(int i_record):
-    print('using cython llapi_getRecordData()')
+    #print('using cython llapi_getRecordData()')
     n_row = GetRecordDataRows(i_record)
     n_col = GetRecordDataColumns(i_record)
     cdef float** data_array_p = NESTGPU_GetRecordData(i_record)
@@ -612,12 +656,13 @@ def llapi_getRecordData(int i_record):
     return ret
 
 def llapi_setSimTime(float sim_time):
-    print('using cython llapi_setSimTime()')
+    #print('using cython llapi_setSimTime()')
     ret = NESTGPU_SetSimTime(sim_time)
     return ret
 
+@timeit
 def llapi_simulate():
-    print('using cython llapi_simulate()')
+    #print('using cython llapi_simulate()')
     ret = NESTGPU_Simulate()
     return ret
 
@@ -791,6 +836,7 @@ def llapi_setNeuronGroupParam(object nodes, object param_name, float val):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_calibrate():
     "Calibrate simulation"
     ret = NESTGPU_Calibrate()
@@ -973,6 +1019,7 @@ def llapi_getNeuronListArrayVar(object node_list, object var_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_connectMpiInit(int argc, object var_name_list):
     "Initialize MPI connections"
     from mpi4py import MPI
@@ -988,9 +1035,10 @@ def llapi_mpiNp():
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_getRecSpikeTimes(int i_node, int n_node):
     "Get recorded spike times for node group"
-    print('using cython llapi_getRecSpikeTimes()')
+    #print('using cython llapi_getRecSpikeTimes()')
     cdef int* n_spike_times_pt
     cdef float** spike_times_pt
     spike_time_list = []
@@ -1007,6 +1055,7 @@ def llapi_getRecSpikeTimes(int i_node, int n_node):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_activateSpikeCount(int i_node, int n_node):
     "Activate spike count for node group"
     ret = NESTGPU_ActivateSpikeCount(i_node, n_node)
@@ -1014,6 +1063,7 @@ def llapi_activateSpikeCount(int i_node, int n_node):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_activateRecSpikeTimes(int i_node, int n_node, int max_n_rec_spike_times):
     "Activate spike time recording for node group"
     ret = NESTGPU_ActivateRecSpikeTimes(i_node, n_node, max_n_rec_spike_times)
@@ -1028,6 +1078,7 @@ def llapi_setRecSpikeTimesStep(int i_node, int n_node, int rec_spike_times_step)
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+@timeit
 def llapi_getSynGroupStatus(object syn_group, object var_key=None):
     "Get synapse group status"
     if type(syn_group)!=SynGroup:

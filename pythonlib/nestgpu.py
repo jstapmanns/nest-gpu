@@ -20,6 +20,21 @@ conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
 
 ng_kernel.llapi_setOnException(1)
 
+from functools import wraps
+import time
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.process_time() #perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.process_time() #perf_counter()
+        total_time = end_time - start_time
+        if total_time > 1.0:
+            print(f'Function {func.__name__}{args} {kwargs} Took {total_time:.4f} seconds')
+
+        return result
+    return timeit_wrapper
+
 def SetRandomSeed(seed):
     "Set seed for random number generation"
     ret = ng_kernel.llapi_setRandomSeed(seed)
@@ -57,6 +72,7 @@ def SetVerbosityLevel(verbosity_level):
     ret = ng_kernel.llapi_setVerbosityLevel(verbosity_level)
     return ret
 
+@timeit
 def Create(model_name, n_node=1, n_ports=1, status_dict=None):
     "Create a neuron group"
     if (type(status_dict)==dict):
@@ -193,6 +209,7 @@ def Simulate(sim_time=1000.0):
     return ret
 
 
+@timeit
 def Connect(source, target, conn_dict, syn_dict):
     "Connect two node groups"
     if (type(source)!=list) & (type(source)!=tuple) & (type(source)!=NodeSeq):
