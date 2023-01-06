@@ -4,7 +4,7 @@ from cython cimport view
 from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 cimport llapi_helpers as llapi_h
-from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId
+from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId, list_to_numpy_array
 
 from functools import wraps
 import time
@@ -273,7 +273,7 @@ def llapi_setSynSpecFloatParam(object param_name, float val):
 @timeit
 def llapi_setSynSpecFloatPtParam(object param_name, object arr):
     "Set synapse pointer to float parameter"
-    array = numpy.array(arr, dtype=numpy.float32, copy=True, order='C')
+    array = list_to_numpy_array(arr)
     print('using llapi_setSynSpecFloatPtParam() to set {}'.format(param_name))
     # TODO: I think both of the cases below are covered by converting the
     #       intput arr to a numpy array.
@@ -384,7 +384,7 @@ def llapi_dictToArray(param_dict, array_size):
             if len(arr) != array_size:
                 raise ValueError("Wrong array size.")
 
-            arr = numpy.array(arr, dtype=numpy.float32, copy=True, order='C')
+            arr = list_to_numpy_array(arr)
         return arr
     elif dist_name=="normal":
         return RandomNormal(array_size, mu, sigma)
@@ -522,22 +522,22 @@ def llapi_connectSeqGroup(int i_source, int n_source, object i_target, int n_tar
     #print('using cython llapi_connectSeqGroup()')
     # TODO: The following line leads to unexpected behaviour if the indices in i_target
     #       are > 2147483647, which is the maximum int32.
-    array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(i_target)
     return NESTGPU_ConnectSeqGroup(i_source, n_source,
             llapi_h.np_int_array_to_pointer(array), n_target)
 
 @timeit
 def llapi_connectGroupSeq(object i_source, int n_source, int i_target, int n_target):
     #print('using cython llapi_connectGroupSeq()')
-    array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(i_source)
     return NESTGPU_ConnectGroupSeq(llapi_h.np_int_array_to_pointer(array),
             n_source, i_target, n_target)
 
 @timeit
 def llapi_connectGroupGroup(object i_source, int n_source, object i_target, int n_target):
     #print('using cython llapi_connectGroupGroup()')
-    source_array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
-    target_array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
+    source_array = list_to_numpy_array(i_source)
+    target_array = list_to_numpy_array(i_target)
     return NESTGPU_ConnectGroupGroup(llapi_h.np_int_array_to_pointer(source_array),
             n_source, llapi_h.np_int_array_to_pointer(target_array), n_target)
 
@@ -552,7 +552,7 @@ def llapi_remoteConnectSeqSeq(int i_source_host, int i_source, int n_source,
 def llapi_remoteConnectSeqGroup(int i_source_host, int i_source, int n_source,
         int i_target_host, object i_target, int n_target):
     #print('using cython llapi_remoteConnectSeqGroup()')
-    array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(i_target)
     return NESTGPU_RemoteConnectSeqGroup(i_source_host, i_source, n_source,
             i_target_host, llapi_h.np_int_array_to_pointer(array), n_target)
 
@@ -560,7 +560,7 @@ def llapi_remoteConnectSeqGroup(int i_source_host, int i_source, int n_source,
 def llapi_remoteConnectGroupSeq(int i_source_host, object i_source, int n_source,
         int i_target_host, int i_target, int n_target):
     #print('using cython llapi_remoteConnectGroupSeq()')
-    array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(i_source)
     return NESTGPU_RemoteConnectGroupSeq(i_source_host, llapi_h.np_int_array_to_pointer(array),
             n_source, i_target_host, i_target, n_target)
 
@@ -568,8 +568,8 @@ def llapi_remoteConnectGroupSeq(int i_source_host, object i_source, int n_source
 def llapi_remoteConnectGroupGroup(int i_source_host, object i_source, int n_source,
         int i_target_host, object i_target, int n_target):
     #print('using cython llapi_remoteConnectGroupGroup()')
-    source_array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
-    target_array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
+    source_array = list_to_numpy_array(i_source)
+    target_array = list_to_numpy_array(i_target)
     return NESTGPU_RemoteConnectGroupGroup(i_source_host,
             llapi_h.np_int_array_to_pointer(source_array), n_source,
             i_target_host, llapi_h.np_int_array_to_pointer(target_array), n_target)
@@ -581,7 +581,6 @@ def llapi_create(model, int n, int n_port):
 
 # TODO: should we change all the char* arguments to string as it is done in NEST?
 #       answer: no, we do not want to change the C api, so we use the char* array.
-# TODO: can we make use of boost? (not necessary but the new NEST api does, I think.
 # TODO: Does it make sense to replace python lists by numpy arrays?
 
 @timeit
@@ -598,7 +597,7 @@ def llapi_getSeqSeqConnections(int i_source, int n_source, int i_target,
 def llapi_getSeqGroupConnections(int i_source, int n_source, object i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getSeqGroupConnections()')
-    target_array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
+    target_array = list_to_numpy_array(i_target)
     cdef int n_conn
     cdef int* c_ret
     c_ret = NESTGPU_GetSeqGroupConnections(i_source, n_source,
@@ -610,7 +609,7 @@ def llapi_getSeqGroupConnections(int i_source, int n_source, object i_target,
 def llapi_getGroupSeqConnections(object i_source, int n_source, int i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getGroupSeqConnections()')
-    source_array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
+    source_array = list_to_numpy_array(i_source)
     cdef int n_conn
     cdef int* c_ret
     c_ret = NESTGPU_GetGroupSeqConnections(llapi_h.np_int_array_to_pointer(source_array),
@@ -624,8 +623,8 @@ def llapi_getGroupSeqConnections(object i_source, int n_source, int i_target,
 def llapi_getGroupGroupConnections(object i_source, int n_source, object i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getGroupGroupConnections()')
-    source_array = numpy.array(i_source, dtype=numpy.int32, copy=True, order='C')
-    target_array = numpy.array(i_target, dtype=numpy.int32, copy=True, order='C')
+    source_array = list_to_numpy_array(i_source)
+    target_array = list_to_numpy_array(i_target)
     cdef int n_conn
     cdef int* c_ret
     c_ret = NESTGPU_GetGroupGroupConnections(llapi_h.np_int_array_to_pointer(source_array),
@@ -637,8 +636,8 @@ def llapi_getGroupGroupConnections(object i_source, int n_source, object i_targe
 def llapi_createRecord(object file_name, object var_name_arr,
         object i_node_arr, object port_arr, int n_node):
     #print('using cython llapi_createRecord()')
-    node_array = numpy.array(i_node_arr, dtype=numpy.int32, copy=True, order='C')
-    port_array = numpy.array(port_arr, dtype=numpy.int32, copy=True, order='C')
+    node_array = list_to_numpy_array(i_node_arr)
+    port_array = list_to_numpy_array(port_arr)
     ret = NESTGPU_CreateRecord(file_name.encode('utf-8'),
             llapi_h.pystring_list_to_cstring_array(var_name_arr),
             llapi_h.np_int_array_to_pointer(node_array),
@@ -676,7 +675,7 @@ def llapi_setNeuronScalParam(int i_node, int n_node, object param_name, float va
 def llapi_setNeuronArrayParam(int i_node, int n_node, object param_name, object param_list):
     "Set neuron array parameter value"
     cdef int array_size = len(param_list)
-    array = numpy.array(param_list, dtype=numpy.float32, copy=True, order='C')
+    array = list_to_numpy_array(param_list)
     ret = NESTGPU_SetNeuronArrayParam(i_node, n_node, param_name.encode('utf-8'),
             llapi_h.np_float_array_to_pointer(array),
             #&llapi_h.pylist_to_float_vec(param_list)[0],
@@ -688,7 +687,7 @@ def llapi_setNeuronArrayParam(int i_node, int n_node, object param_name, object 
 def llapi_setNeuronPtScalParam(object nodes, object param_name, float val):
     "Set neuron list scalar parameter value"
     n_node = len(nodes)
-    array = numpy.array(nodes, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(nodes)
     ret = NESTGPU_SetNeuronPtScalParam(llapi_h.np_int_array_to_pointer(array),
                                          n_node, param_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -698,10 +697,10 @@ def llapi_setNeuronPtScalParam(object nodes, object param_name, float val):
 def llapi_setNeuronPtArrayParam(object nodes, object param_name, object param_list):
     "Set neuron list array parameter value"
     n_node = len(nodes)
-    node_array = numpy.array(nodes, dtype=numpy.int32, copy=True, order='C')
+    node_array = list_to_numpy_array(nodes)
 
     array_size = len(param_list)
-    param_array = numpy.array(param_list, dtype=numpy.float32, copy=True, order='C')
+    param_array = list_to_numpy_array(param_list)
     ret = NESTGPU_SetNeuronPtArrayParam(llapi_h.np_int_array_to_pointer(node_array),
                                           n_node, param_name.encode('utf-8'),
                                           llapi_h.np_float_array_to_pointer(param_array),
@@ -756,7 +755,7 @@ def llapi_setNeuronScalVar(int i_node, int n_node, object var_name, float val):
 def llapi_setNeuronArrayVar(int i_node, int n_node, object var_name, object var_list):
     "Set neuron array variable value"
     array_size = len(var_list)
-    array = numpy.array(var_list, dtype=numpy.float32, copy=True, order='C')
+    array = list_to_numpy_array(var_list)
     ret = NESTGPU_SetNeuronArrayVar(i_node, n_node, var_name.encode('utf-8'),
             llapi_h.np_float_array_to_pointer(array),
             #&llapi_h.pylist_to_float_vec(var_list)[0],
@@ -768,7 +767,7 @@ def llapi_setNeuronArrayVar(int i_node, int n_node, object var_name, object var_
 def llapi_setNeuronPtIntVar(object nodes, object var_name, int val):
     "Set neuron list integer variable value"
     n_node = len(nodes)
-    array = numpy.array(nodes, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(nodes)
     ret = NESTGPU_SetNeuronPtIntVar(llapi_h.np_int_array_to_pointer(array),
                                        n_node, var_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -778,7 +777,7 @@ def llapi_setNeuronPtIntVar(object nodes, object var_name, int val):
 def llapi_setNeuronPtScalVar(object nodes, object var_name, float val):
     "Set neuron list scalar variable value"
     n_node = len(nodes)
-    array = numpy.array(nodes, dtype=numpy.int32, copy=True, order='C')
+    array = list_to_numpy_array(nodes)
     ret = NESTGPU_SetNeuronPtScalVar(llapi_h.np_int_array_to_pointer(array),
                                        n_node, var_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -788,10 +787,10 @@ def llapi_setNeuronPtScalVar(object nodes, object var_name, float val):
 def llapi_setNeuronPtArrayVar(object nodes, object var_name, object var_list):
     "Set neuron list array variable value"
     n_node = len(nodes)
-    node_array = numpy.array(nodes, dtype=numpy.int32, copy=True, order='C')
+    node_array = list_to_numpy_array(nodes)
 
     array_size = len(var_list)
-    var_array = numpy.array(var_list, dtype=numpy.float32, copy=True, order='C')
+    var_array = list_to_numpy_array(var_list)
     ret = NESTGPU_SetNeuronPtArrayVar(llapi_h.np_int_array_to_pointer(node_array),
                                         n_node, var_name.encode('utf-8'),
                                         llapi_h.np_float_array_to_pointer(var_array),
