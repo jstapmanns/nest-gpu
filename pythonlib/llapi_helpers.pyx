@@ -242,4 +242,35 @@ cdef char** pystring_list_to_cstring_array(object pystring_list):
 
     return cstring_array
 
+def list_to_numpy_array(object pylist):
+    '''
+    This function converts a python list or a numpy array into a numpy array of int32
+    or float32 depending on whether the first element of the input is an integer or a
+    floating point number. Since Python uses int64 and float64, large numbers can be
+    copied incorrectly. Therefore, this function throws an error message if the larges
+    (smallest) number is larger (smaller) than the maximum (minimum) int32 or float32.
+    TODO: measurement of the execution time suggests that the overflow check is time
+    consuming.
+    '''
+    if not (isinstance(pylist, list) or isinstance(pylist, numpy.ndarray)):
+        raise TypeError('pylist must be a 1-dimensional python list or numpy array of ints or floats, got {}'.format(
+            type(pylist)))
+    if len(pylist) == 0:
+        raise TypeError('length of pylist should be > 0')
 
+    if numpy.issubdtype(type(pylist[0]), numpy.integer):
+        if max(pylist) > numpy.iinfo(numpy.int32).max:
+            raise TypeError('overflow: all values in pylist must be < max(int32), got {}> {}'.format(max(pylist), numpy.iinfo(numpy.int32).max))
+        if min(pylist) < numpy.iinfo(numpy.int32).min:
+            raise TypeError('overflow: all values in pylist must be > min(int32), got {}> {}'.format(min(pylist), numpy.iinfo(numpy.int32).min))
+        return numpy.array(pylist, dtype=numpy.int32, copy=True, order='C')
+
+    elif numpy.issubdtype(type(pylist[0]), numpy.floating):
+        if max(pylist) > numpy.finfo(numpy.float32).max:
+            raise TypeError('overflow: all values in pylist must be < max(float32), got {}> {}'.format(max(pylist), numpy.finfo(numpy.float32).max))
+        if min(pylist) < numpy.finfo(numpy.float32).min:
+            raise TypeError('overflow: all values in pylist must be > min(float32), got {}> {}'.format(min(pylist), numpy.finfo(numpy.float32).min))
+        return numpy.array(pylist, dtype=numpy.float32, copy=True, order='C')
+
+    else:
+        raise TypeError('pylist must be a python list of ints or floats, got {}'.format(type(pylist[0])))
