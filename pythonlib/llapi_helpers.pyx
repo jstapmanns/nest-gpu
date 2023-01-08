@@ -5,7 +5,19 @@ from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 from libcpp.vector cimport vector
 
+from functools import wraps
 import time
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.process_time() #perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.process_time() #perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__} Took {total_time:.4f} seconds')
+        return result
+    return timeit_wrapper
+
 
 '''
 class definitions
@@ -248,7 +260,7 @@ cdef char** pystring_list_to_cstring_array(object pystring_list):
 
     return cstring_array
 
-def list_to_numpy_array(object pylist):
+def list_to_numpy_array(object pylist, object calling_function = None):
     '''
     This function converts a python list or a numpy array into a numpy array of int32
     or float32 depending on whether the first element of the input is an integer or a
@@ -258,6 +270,12 @@ def list_to_numpy_array(object pylist):
     TODO: measurement of the execution time suggests that the overflow check is time
     consuming.
     '''
+    if calling_function == None:
+        print('llapi_helpers list_to_numpy_array(), len(array): {}'.format(len(pylist)))
+    else:
+        print('llapi_helpers list_to_numpy_array(), called from {}, len(array): {}'.format(
+            calling_function, len(pylist)))
+
     if not (isinstance(pylist, list) or isinstance(pylist, numpy.ndarray)):
         raise TypeError('pylist must be a 1-dimensional python list or numpy array of ints or floats, got {}'.format(
             type(pylist)))

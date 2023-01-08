@@ -157,6 +157,7 @@ def SetNeuronStatus(nodes, var_name, val):
         array_size = len(nodes)
         arr = ng_kernel.llapi_dictToArray(val, array_size)
         for i in range(array_size):
+            # TODO: This for loop is very inefficient
             SetNeuronStatus([nodes[i]], var_name, arr[i])
         return
 

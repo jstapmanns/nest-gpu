@@ -25,7 +25,7 @@ Main file of the microcircuit defining the ``Network`` class with functions to
 build and simulate the network.
 
 """
-mode = 'old' #'new'
+mode = 'new'
 import os
 import numpy as np
 if mode == 'new':

@@ -273,7 +273,7 @@ def llapi_setSynSpecFloatParam(object param_name, float val):
 @timeit
 def llapi_setSynSpecFloatPtParam(object param_name, object arr):
     "Set synapse pointer to float parameter"
-    array = list_to_numpy_array(arr)
+    array = list_to_numpy_array(arr, 'setSynSpecFloatParam')
     print('using llapi_setSynSpecFloatPtParam() to set {}'.format(param_name))
     # TODO: I think both of the cases below are covered by converting the
     #       intput arr to a numpy array.
@@ -384,7 +384,7 @@ def llapi_dictToArray(param_dict, array_size):
             if len(arr) != array_size:
                 raise ValueError("Wrong array size.")
 
-            arr = list_to_numpy_array(arr)
+            arr = list_to_numpy_array(arr, 'dictToArray')
         return arr
     elif dist_name=="normal":
         return RandomNormal(array_size, mu, sigma)
@@ -522,14 +522,14 @@ def llapi_connectSeqGroup(int i_source, int n_source, object i_target, int n_tar
     #print('using cython llapi_connectSeqGroup()')
     # TODO: The following line leads to unexpected behaviour if the indices in i_target
     #       are > 2147483647, which is the maximum int32.
-    array = list_to_numpy_array(i_target)
+    array = list_to_numpy_array(i_target, 'llapi_connectSeqGroup')
     return NESTGPU_ConnectSeqGroup(i_source, n_source,
             llapi_h.np_int_array_to_pointer(array), n_target)
 
 @timeit
 def llapi_connectGroupSeq(object i_source, int n_source, int i_target, int n_target):
     #print('using cython llapi_connectGroupSeq()')
-    array = list_to_numpy_array(i_source)
+    array = list_to_numpy_array(i_source, 'llapi_connectGroupSeq')
     return NESTGPU_ConnectGroupSeq(llapi_h.np_int_array_to_pointer(array),
             n_source, i_target, n_target)
 
@@ -636,8 +636,8 @@ def llapi_getGroupGroupConnections(object i_source, int n_source, object i_targe
 def llapi_createRecord(object file_name, object var_name_arr,
         object i_node_arr, object port_arr, int n_node):
     #print('using cython llapi_createRecord()')
-    node_array = list_to_numpy_array(i_node_arr)
-    port_array = list_to_numpy_array(port_arr)
+    node_array = list_to_numpy_array(i_node_arr, 'llapi_createRecord')
+    port_array = list_to_numpy_array(port_arr, 'llapi_createRecord')
     ret = NESTGPU_CreateRecord(file_name.encode('utf-8'),
             llapi_h.pystring_list_to_cstring_array(var_name_arr),
             llapi_h.np_int_array_to_pointer(node_array),
@@ -675,7 +675,7 @@ def llapi_setNeuronScalParam(int i_node, int n_node, object param_name, float va
 def llapi_setNeuronArrayParam(int i_node, int n_node, object param_name, object param_list):
     "Set neuron array parameter value"
     cdef int array_size = len(param_list)
-    array = list_to_numpy_array(param_list)
+    array = list_to_numpy_array(param_list, 'llapi_setNeuronArrayParam')
     ret = NESTGPU_SetNeuronArrayParam(i_node, n_node, param_name.encode('utf-8'),
             llapi_h.np_float_array_to_pointer(array),
             #&llapi_h.pylist_to_float_vec(param_list)[0],
@@ -687,7 +687,7 @@ def llapi_setNeuronArrayParam(int i_node, int n_node, object param_name, object 
 def llapi_setNeuronPtScalParam(object nodes, object param_name, float val):
     "Set neuron list scalar parameter value"
     n_node = len(nodes)
-    array = list_to_numpy_array(nodes)
+    array = list_to_numpy_array(nodes, 'llapi_setNeuronPtScalParam')
     ret = NESTGPU_SetNeuronPtScalParam(llapi_h.np_int_array_to_pointer(array),
                                          n_node, param_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -697,10 +697,10 @@ def llapi_setNeuronPtScalParam(object nodes, object param_name, float val):
 def llapi_setNeuronPtArrayParam(object nodes, object param_name, object param_list):
     "Set neuron list array parameter value"
     n_node = len(nodes)
-    node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes, 'llapi_setNeuronPtArrayParam')
 
     array_size = len(param_list)
-    param_array = list_to_numpy_array(param_list)
+    param_array = list_to_numpy_array(param_list, 'llapi_setNeuronPtArrayParam')
     ret = NESTGPU_SetNeuronPtArrayParam(llapi_h.np_int_array_to_pointer(node_array),
                                           n_node, param_name.encode('utf-8'),
                                           llapi_h.np_float_array_to_pointer(param_array),
@@ -755,7 +755,7 @@ def llapi_setNeuronScalVar(int i_node, int n_node, object var_name, float val):
 def llapi_setNeuronArrayVar(int i_node, int n_node, object var_name, object var_list):
     "Set neuron array variable value"
     array_size = len(var_list)
-    array = list_to_numpy_array(var_list)
+    array = list_to_numpy_array(var_list, 'llapi_setNeuronArrayVar')
     ret = NESTGPU_SetNeuronArrayVar(i_node, n_node, var_name.encode('utf-8'),
             llapi_h.np_float_array_to_pointer(array),
             #&llapi_h.pylist_to_float_vec(var_list)[0],
@@ -767,7 +767,7 @@ def llapi_setNeuronArrayVar(int i_node, int n_node, object var_name, object var_
 def llapi_setNeuronPtIntVar(object nodes, object var_name, int val):
     "Set neuron list integer variable value"
     n_node = len(nodes)
-    array = list_to_numpy_array(nodes)
+    array = list_to_numpy_array(nodes, 'llapi_setNeuronPtIntVar')
     ret = NESTGPU_SetNeuronPtIntVar(llapi_h.np_int_array_to_pointer(array),
                                        n_node, var_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -777,7 +777,7 @@ def llapi_setNeuronPtIntVar(object nodes, object var_name, int val):
 def llapi_setNeuronPtScalVar(object nodes, object var_name, float val):
     "Set neuron list scalar variable value"
     n_node = len(nodes)
-    array = list_to_numpy_array(nodes)
+    array = list_to_numpy_array(nodes, 'llapi_setNeuronPtScalVar')
     ret = NESTGPU_SetNeuronPtScalVar(llapi_h.np_int_array_to_pointer(array),
                                        n_node, var_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -787,10 +787,10 @@ def llapi_setNeuronPtScalVar(object nodes, object var_name, float val):
 def llapi_setNeuronPtArrayVar(object nodes, object var_name, object var_list):
     "Set neuron list array variable value"
     n_node = len(nodes)
-    node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes, 'llapi_setNeuronPtArrayVar')
 
     array_size = len(var_list)
-    var_array = list_to_numpy_array(var_list)
+    var_array = list_to_numpy_array(var_list, 'llapi_setNeuronPtArrayVar')
     ret = NESTGPU_SetNeuronPtArrayVar(llapi_h.np_int_array_to_pointer(node_array),
                                         n_node, var_name.encode('utf-8'),
                                         llapi_h.np_float_array_to_pointer(var_array),
