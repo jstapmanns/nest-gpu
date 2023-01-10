@@ -159,6 +159,8 @@ cdef extern from "nestgpu_C.h":
     char **NESTGPU_GetArrayVarNames(int i_node)
     char **NESTGPU_GetArrayParamNames(int i_node)
     char **NESTGPU_GetGroupParamNames(int i_node)
+    int NESTGPU_RemoteCreate(int i_host, char *model_name, int n_neuron,
+                 int n_port)
 
 
 '''
@@ -183,6 +185,4 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_GetBoolParamIdx(char *param_name)
     int NESTGPU_GetFloatParamIdx(char *param_name)
     int NESTGPU_GetIntParamIdx(char *param_name)
-    int NESTGPU_RemoteCreate(int i_host, char *model_name, int n_neuron,
-                 int n_port)
 '''

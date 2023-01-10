@@ -560,3 +560,20 @@ def GetRecSpikeTimes(nodes):
 
     ret = ng_kernel.llapi_getRecSpikeTimes(nodes.i0, nodes.n)
     return ret
+
+def RemoteCreate(i_host, model_name, n_node=1, n_ports=1, status_dict=None):
+    "Create a remote neuron group"
+    if (type(status_dict)==dict):
+        remote_node_group = RemoteCreate(i_host, model_name, n_node, n_ports)
+        SetStatus(remote_node_group, status_dict)
+        return remote_node_group
+
+    elif status_dict!=None:
+        raise ValueError("Wrong argument in RemoteCreate")
+
+    i_node = ng_kernel.llapi_remoteCreate(i_host, model_name.encode('utf-8'), n_node, n_ports)
+    node_seq = NodeSeq(i_node, n_node)
+    ret = RemoteNodeSeq(i_host, node_seq)
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
+    return ret

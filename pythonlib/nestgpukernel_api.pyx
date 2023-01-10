@@ -1161,3 +1161,7 @@ def GetGroupParamNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return param_name_list
 
+def llapi_remoteCreate(int i_host, object model, int n, int n_port):
+    print('using cython llapi_remoteCreate() to create {} {}(s)'.format(n, model))
+    return NESTGPU_RemoteCreate(i_host, model.encode('utf-8'), n, n_port)
+
