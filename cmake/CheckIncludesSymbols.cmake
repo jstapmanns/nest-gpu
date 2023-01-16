@@ -25,6 +25,7 @@ check_include_files( "inttypes.h" HAVE_INTTYPES_H )
 check_include_files( "limits.h" HAVE_LIMITS_H )
 check_include_files( "memory.h" HAVE_MEMORY_H )
 check_include_files( "stdint.h" HAVE_STDINT_H )
+check_include_files( "stdio.h" HAVE_STDIO_H )
 check_include_files( "stdlib.h" HAVE_STDLIB_H )
 check_include_files( "strings.h" HAVE_STRINGS_H )
 check_include_files( "string.h" HAVE_STRING_H )
@@ -54,7 +55,7 @@ if ( NOT Python_FOUND )
   string( CONCAT PYABI_WARN "Could not locate Python ABI"
     ", using shared libraries and header file instead."
     " Please clear your CMake cache and build folder and verify that CMake"
-    " is up-to-date (3.18+)."
+    " is up-to-date (3.17+)."
   )
   printWarning("${PYABI_WARN}")
 else()

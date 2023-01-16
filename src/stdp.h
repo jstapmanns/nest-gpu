@@ -19,63 +19,10 @@
  */
 
 
-
-
-
 #ifndef STDP_H
 #define STDP_H
+#include <cmath>
 
-#include "syn_model.h"
-
-/* BeginUserDocs: synapse, spike-timing-dependent plasticity
-
-Short description
-+++++++++++++++++
-
-Synapse type for spike-timing dependent plasticity
-
-Description
-+++++++++++
-
-The STDP class is a type of synapse model used to create
-synapses that enable spike timing dependent plasticity
-(as defined in [1]_). 
-Here the weight dependence exponent can be set separately
-for potentiation and depression.
-
-
-Parameters
-++++++++++
-
-========== =======  ======================================================
- tau_plus  ms       Time constant of STDP window, potentiation
- tau_minus ms       Time constant of STDP window, depression
- lambda    real     Step size
- alpha     real     Asymmetry parameter (scales depression increments as
-                    alpha*lambda)
- mu_plus   real     Weight dependence exponent, potentiation
- mu_minus  real     Weight dependence exponent, depression
- Wmax      real     Maximum allowed weight
-========== =======  ======================================================
-
-
-References
-++++++++++
-
-.. [1] Guetig et al. (2003). Learning input correlations through nonlinear
-       temporally asymmetric hebbian plasticity. Journal of Neuroscience,
-       23:3697-3714 DOI: https://doi.org/10.1523/JNEUROSCI.23-09-03697.2003
-
-
-EndUserDocs */
-
-
-class STDP : public SynModel
-{
- public:
-  STDP() {Init();}
-  int Init();
-};
 
 namespace stdp_ns
 {
@@ -90,6 +37,38 @@ namespace stdp_ns
     //, "den_delay"
   };
 
+
+
+  __device__ __forceinline__ void STDPUpdate(float *weight_pt, float Dt,
+					     float *param)
+  {
+    //printf("Dt: %f\n", Dt);
+    double tau_plus = param[i_tau_plus];
+    double tau_minus = param[i_tau_minus];
+    double lambda = param[i_lambda];
+    double alpha = param[i_alpha];
+    double mu_plus = param[i_mu_plus];
+    double mu_minus = param[i_mu_minus];
+    double Wmax = param[i_Wmax];
+    //double den_delay = param[i_den_delay];
+    
+    double w = *weight_pt;
+    double w1;
+    //Dt += den_delay;
+    if (Dt>=0) {
+      double fact = lambda*exp(-(double)Dt/tau_plus);
+      w1 = w + fact*Wmax*pow(1.0 - w/Wmax, mu_plus);
+    }
+    else {
+      double fact = -alpha*lambda*exp((double)Dt/tau_minus);
+      w1 = w + fact*Wmax*pow(w/Wmax, mu_minus);
+    }
+    
+    w1 = w1 >0.0 ? w1 : 0.0;
+    w1 = w1 < Wmax ? w1 : Wmax;
+    *weight_pt = (float)w1;
+  }
 }
+
 
 #endif
