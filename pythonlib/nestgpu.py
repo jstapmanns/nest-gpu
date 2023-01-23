@@ -577,3 +577,18 @@ def RemoteCreate(i_host, model_name, n_node=1, n_ports=1, status_dict=None):
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
+
+def CreateSynGroup(model_name, status_dict=None):
+    "Create a synapse group"
+    if (type(status_dict)==dict):
+        syn_group = CreateSynGroup(model_name)
+        SetStatus(syn_group, status_dict)
+        return syn_group
+    elif status_dict!=None:
+        raise ValueError("Wrong argument in CreateSynGroup")
+
+    i_syn_group = ng_kernel.llapi_createSynGroup(model_name.encode('utf-8'))
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
+    return SynGroup(i_syn_group)
+

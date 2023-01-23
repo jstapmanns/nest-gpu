@@ -1165,3 +1165,6 @@ def llapi_remoteCreate(int i_host, object model, int n, int n_port):
     print('using cython llapi_remoteCreate() to create {} {}(s)'.format(n, model))
     return NESTGPU_RemoteCreate(i_host, model.encode('utf-8'), n, n_port)
 
+def llapi_createSynGroup(object model_name):
+    print('using llapi_createSynGroup() to create {}'.format(model_name))
+    return NESTGPU_CreateSynGroup(model_name.encode('utf-8'))
