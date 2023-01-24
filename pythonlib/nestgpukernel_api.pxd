@@ -162,6 +162,10 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_RemoteCreate(int i_host, char *model_name, int n_neuron,
                  int n_port)
     int NESTGPU_CreateSynGroup(char *model_name)
+    int NESTGPU_GetConnectionStatus(int i_source, int i_group, int i_conn,
+                    int *i_target, unsigned char *port,
+                    unsigned char *syn_group, float *delay,
+                    float *weight)
 
 
 '''

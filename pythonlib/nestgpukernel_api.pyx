@@ -987,6 +987,18 @@ def llapi_mpiNp():
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+def llapi_getConnectionStatus(int i_source, int i_group, int i_conn):
+    cdef int i_target = 0
+    cdef unsigned char i_port = 0#''.encode('utf-8')
+    cdef unsigned char i_syn = 0#''.encode('utf-8')
+    cdef float delay = 0.0
+    cdef float weight = 0.0
+    ret = NESTGPU_GetConnectionStatus(i_source, i_group, i_conn,
+                    &i_target, &i_port, &i_syn, &delay, &weight)
+    ret_dict = {'target':i_target, 'port':ord(i_port), 'syn_group':ord(i_syn),
+            'delay':delay, 'weight':weight}
+    return ret_dict
+
 def llapi_getRecSpikeTimes(int i_node, int n_node):
     "Get recorded spike times for node group"
     print('using cython llapi_getRecSpikeTimes()')

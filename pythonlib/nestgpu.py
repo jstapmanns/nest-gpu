@@ -269,7 +269,7 @@ def SetStatus(gen_object, params, val=None):
 
     gc.disable()
     if type(gen_object)==SynGroup:
-        ret = ng_kernel.setSynGroupStatus(gen_object, params, val)
+        ret = ng_kernel.llapi_setSynGroupStatus(gen_object, params, val)
         gc.enable()
         return ret
     nodes = gen_object
@@ -554,6 +554,16 @@ def GetStatus(gen_object, var_key=None):
     else:
         raise ValueError("Unknown key type in GetStatus", type(var_key))
 
+def GetConnectionStatus(conn_id):
+    i_source = conn_id.i_source
+    i_group = conn_id.i_group
+    i_conn = conn_id.i_conn
+
+    conn_status_dict = ng_kernel.llapi_getConnectionStatus(i_source, i_group, i_conn)
+
+    conn_status_dict['source'] = i_source
+    return conn_status_dict
+
 def GetRecSpikeTimes(nodes):
     if type(nodes)!=NodeSeq:
         raise ValueError("First argument type of GetRecSpikeTimes must be NodeSeq")
@@ -571,7 +581,7 @@ def RemoteCreate(i_host, model_name, n_node=1, n_ports=1, status_dict=None):
     elif status_dict!=None:
         raise ValueError("Wrong argument in RemoteCreate")
 
-    i_node = ng_kernel.llapi_remoteCreate(i_host, model_name.encode('utf-8'), n_node, n_ports)
+    i_node = ng_kernel.llapi_remoteCreate(i_host, model_name, n_node, n_ports)
     node_seq = NodeSeq(i_node, n_node)
     ret = RemoteNodeSeq(i_host, node_seq)
     if ng_kernel.llapi_getErrorCode() != 0:
@@ -587,7 +597,7 @@ def CreateSynGroup(model_name, status_dict=None):
     elif status_dict!=None:
         raise ValueError("Wrong argument in CreateSynGroup")
 
-    i_syn_group = ng_kernel.llapi_createSynGroup(model_name.encode('utf-8'))
+    i_syn_group = ng_kernel.llapi_createSynGroup(model_name)
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return SynGroup(i_syn_group)
