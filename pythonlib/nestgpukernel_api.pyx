@@ -844,7 +844,7 @@ def llapi_getNeuronParam(int i_node, int n_node, object param_name):
     cdef float* first = NESTGPU_GetNeuronParam(i_node,
                                        n_node, param_name.encode('utf-8'))
 
-    cdef int array_size = GetNeuronParamSize(i_node, param_name.encode('utf-8'))
+    cdef int array_size = GetNeuronParamSize(i_node, param_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -858,7 +858,7 @@ def llapi_getNeuronPtParam(object nodes, object param_name):
     n_node = len(nodes)
     cdef float* first = NESTGPU_GetNeuronPtParam(&llapi_h.pylist_to_int_vec(nodes)[0],
                                          n_node, param_name.encode('utf-8'))
-    cdef int array_size = GetNeuronParamSize(nodes[0], param_name.encode('utf-8'))
+    cdef int array_size = GetNeuronParamSize(nodes[0], param_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -874,7 +874,7 @@ def llapi_getArrayParam(int i_node, int n_node, object param_name):
     for j_node in range(n_node):
         i_node1 = i_node + j_node
         first = NESTGPU_GetArrayParam(i_node1, param_name.encode('utf-8'))
-        array_size = GetNeuronParamSize(i_node1, param_name.encode('utf-8'))
+        array_size = GetNeuronParamSize(i_node1, param_name)
         row_arr = numpy.asarray(<float[:array_size]>first)
         data_list.append(row_arr)
 
@@ -905,7 +905,7 @@ def llapi_getNeuronVar(int i_node, int n_node, object var_name):
     cdef float* first = NESTGPU_GetNeuronVar(i_node,
                                        n_node, var_name.encode('utf-8'))
 
-    cdef int array_size = GetNeuronVarSize(i_node, var_name.encode('utf-8'))
+    cdef int array_size = GetNeuronVarSize(i_node, var_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -932,12 +932,8 @@ def llapi_getNeuronPtVar(object nodes, object var_name):
     n_node = len(nodes)
     cdef float* first = NESTGPU_GetNeuronPtVar(&llapi_h.pylist_to_int_vec(nodes)[0],
                                        n_node, var_name.encode('utf-8'))
-    cdef int array_size = GetNeuronVarSize(nodes[0], var_name.encode('utf-8'))
-    print('n_node: {}, array_size: {}'.format(n_node, array_size))
-    if (array_size>0):
-        ret = numpy.asarray(<float[:n_node*array_size]>first)
-    else:
-        ret = numpy.array([])
+    cdef int array_size = GetNeuronVarSize(nodes[0], var_name)
+    ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
 
@@ -952,7 +948,7 @@ def llapi_getArrayVar(int i_node, int n_node, object var_name):
     for j_node in range(n_node):
         i_node1 = i_node + j_node
         first = NESTGPU_GetArrayVar(i_node1, var_name.encode('utf-8'))
-        array_size = GetNeuronVarSize(i_node1, var_name.encode('utf-8'))
+        array_size = GetNeuronVarSize(i_node1, var_name)
         row_arr = numpy.asarray(<float[:array_size]>first)
         data_list.append(row_arr)
 
@@ -967,7 +963,7 @@ def llapi_getNeuronListArrayVar(object node_list, object var_name):
     cdef float* first
     for i_node in node_list:
         first = NESTGPU_GetArrayVar(i_node, var_name.encode('utf-8'))
-        array_size = GetNeuronVarSize(i_node, var_name.encode('utf-8'))
+        array_size = GetNeuronVarSize(i_node, var_name)
         row_arr = numpy.asarray(<float[:array_size]>first)
         data_list.append(row_arr)
 
