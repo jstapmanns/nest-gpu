@@ -933,7 +933,11 @@ def llapi_getNeuronPtVar(object nodes, object var_name):
     cdef float* first = NESTGPU_GetNeuronPtVar(&llapi_h.pylist_to_int_vec(nodes)[0],
                                        n_node, var_name.encode('utf-8'))
     cdef int array_size = GetNeuronVarSize(nodes[0], var_name.encode('utf-8'))
-    ret = numpy.asarray(<float[:n_node*array_size]>first)
+    print('n_node: {}, array_size: {}'.format(n_node, array_size))
+    if (array_size>0):
+        ret = numpy.asarray(<float[:n_node*array_size]>first)
+    else:
+        ret = numpy.array([])
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
 
@@ -972,6 +976,22 @@ def llapi_getNeuronListArrayVar(object node_list, object var_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+def llapi_getNeuronListArrayParam(node_list, param_name):
+    "Get neuron array parameter"
+    data_list = []
+    cdef float* first
+    for i_node in node_list:
+        first = NESTGPU_GetArrayParam(i_node, param_name.encode('utf-8'))
+        array_size = GetNeuronParamSize(i_node, param_name)
+        row_arr = numpy.asarray(<float[:array_size]>first)
+        data_list.append(row_arr)
+
+    ret = data_list
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+
 def llapi_connectMpiInit(int argc, object var_name_list):
     "Initialize MPI connections"
     from mpi4py import MPI
@@ -995,7 +1015,7 @@ def llapi_getConnectionStatus(int i_source, int i_group, int i_conn):
     cdef float weight = 0.0
     ret = NESTGPU_GetConnectionStatus(i_source, i_group, i_conn,
                     &i_target, &i_port, &i_syn, &delay, &weight)
-    ret_dict = {'target':i_target, 'port':ord(i_port), 'syn_group':ord(i_syn),
+    ret_dict = {'target':i_target, 'port':ord(i_port), 'syn':ord(i_syn),
             'delay':delay, 'weight':weight}
     return ret_dict
 
@@ -1117,7 +1137,7 @@ def llapi_getPortVarNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return var_name_list
 
-def GetPortParamNames(int i_node):
+def llapi_getPortParamNames(int i_node):
     "Get list of scalar parameter names"
     cdef int n_param = GetNPortParam(i_node)
     cdef char** param_name_pp = NESTGPU_GetPortParamNames(i_node)
@@ -1131,7 +1151,7 @@ def GetPortParamNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return param_name_list
 
-def GetArrayVarNames(int i_node):
+def llapi_getArrayVarNames(int i_node):
     "Get list of scalar variable names"
     cdef int n_var = GetNArrayVar(i_node)
     cdef char** var_name_pp = NESTGPU_GetArrayVarNames(i_node)
@@ -1145,7 +1165,7 @@ def GetArrayVarNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return var_name_list
 
-def GetArrayParamNames(int i_node):
+def llapi_getArrayParamNames(int i_node):
     "Get list of scalar parameter names"
     cdef int n_param = GetNArrayParam(i_node)
     cdef char** param_name_pp = NESTGPU_GetArrayParamNames(i_node)
@@ -1159,7 +1179,7 @@ def GetArrayParamNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return param_name_list
 
-def GetGroupParamNames(int i_node):
+def llapi_getGroupParamNames(int i_node):
     "Get list of scalar parameter names"
     cdef int n_param = GetNGroupParam(i_node)
     cdef char** param_name_pp = NESTGPU_GetGroupParamNames(i_node)

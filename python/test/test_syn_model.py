@@ -8,8 +8,8 @@ fact = 0.2
 offset = 0.03
 
 syn_group = ngpu.CreateSynGroup("test_syn_model")
-ngpu.SetSynGroupParam(syn_group, "fact", fact)
-ngpu.SetSynGroupParam(syn_group, "offset", offset)
+ngpu.SetStatus(syn_group, "fact", fact)
+ngpu.SetStatus(syn_group, "offset", offset)
 
 sg = ngpu.Create("spike_generator", N)
 neuron = ngpu.Create("aeif_cond_beta", 2*N)

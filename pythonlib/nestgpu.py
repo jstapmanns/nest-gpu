@@ -504,7 +504,7 @@ def SetRecSpikeTimesStep(nodes, rec_spike_times_step):
 def GetStatus(gen_object, var_key=None):
     "Get neuron group, connection or synapse group status"
     if type(gen_object)==SynGroup:
-        return GetSynGroupStatus(gen_object, var_key)
+        return ng_kernel.llapi_getSynGroupStatus(gen_object, var_key)
 
     if type(gen_object)==NodeSeq:
         gen_object = gen_object.ToList()
@@ -527,7 +527,7 @@ def GetStatus(gen_object, var_key=None):
             i_node = gen_object
             status_dict = {}
             name_list = ng_kernel.llapi_getIntVarNames(i_node) \
-                        + ng_kernel.llapi_GetScalVarNames(i_node) \
+                        + ng_kernel.llapi_getScalVarNames(i_node) \
                         + ng_kernel.llapi_getScalParamNames(i_node) \
                         + ng_kernel.llapi_getPortVarNames(i_node) \
                         + ng_kernel.llapi_getPortParamNames(i_node) \
