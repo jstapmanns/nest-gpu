@@ -44,7 +44,3 @@ print(ngpu.GetStatus(spike1))
 print()
 print()
 print(ngpu.GetStatus(neuron_list))
-
-
-      
-      

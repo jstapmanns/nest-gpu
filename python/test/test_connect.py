@@ -32,11 +32,11 @@ conn_dict={"rule": "all_to_all"}
 even_to_odd_syn_dict={
     "weight_array":even_to_odd_weight,
     "delay_array":even_to_odd_delay}
-  
+
 odd_to_even_syn_dict={
     "weight_array":odd_to_even_weight,
     "delay_array":odd_to_even_delay}
-  
+
 ngpu.Connect(neuron_even, neuron_odd, conn_dict, even_to_odd_syn_dict);
 ngpu.Connect(neuron_odd, neuron_even, conn_dict, odd_to_even_syn_dict);
 
@@ -47,14 +47,15 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("Even to all")
 for i in range(len(conn_status_dict)):
-    print (conn_status_dict[i])
+    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
+    print(sorted_dict)
 print()
 print()
 
 # Even to all weight, delay
 conn_status_dict = ngpu.GetStatus(conn_id, ["weight", "delay"])
 print("########################################")
-print("Even to all weight, delat")
+print("Even to all weight, delay")
 for i in range(len(conn_status_dict)):
     print (conn_status_dict[i])
 print()
@@ -65,7 +66,8 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("All to odd")
 for i in range(len(conn_status_dict)):
-    print (conn_status_dict[i])
+    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
+    print(sorted_dict)
 print()
 print()
 
@@ -76,18 +78,20 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("Even to 3,4,5,6")
 for i in range(len(conn_status_dict)):
-    print (conn_status_dict[i])
+    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
+    print(sorted_dict)
 print()
 print()
 
- 
+
 # 3,4,5,6 to odd
 conn_id = ngpu.GetConnections(neuron_3_6, neuron_odd)
 conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("3,4,5,6 to odd")
 for i in range(len(conn_status_dict)):
-    print (conn_status_dict[i])
+    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
+    print(sorted_dict)
 print()
 print()
 

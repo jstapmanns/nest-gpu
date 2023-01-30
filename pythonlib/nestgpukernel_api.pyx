@@ -844,7 +844,7 @@ def llapi_getNeuronParam(int i_node, int n_node, object param_name):
     cdef float* first = NESTGPU_GetNeuronParam(i_node,
                                        n_node, param_name.encode('utf-8'))
 
-    cdef int array_size = GetNeuronParamSize(i_node, param_name.encode('utf-8'))
+    cdef int array_size = GetNeuronParamSize(i_node, param_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -858,7 +858,7 @@ def llapi_getNeuronPtParam(object nodes, object param_name):
     n_node = len(nodes)
     cdef float* first = NESTGPU_GetNeuronPtParam(&llapi_h.pylist_to_int_vec(nodes)[0],
                                          n_node, param_name.encode('utf-8'))
-    cdef int array_size = GetNeuronParamSize(nodes[0], param_name.encode('utf-8'))
+    cdef int array_size = GetNeuronParamSize(nodes[0], param_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -874,7 +874,7 @@ def llapi_getArrayParam(int i_node, int n_node, object param_name):
     for j_node in range(n_node):
         i_node1 = i_node + j_node
         first = NESTGPU_GetArrayParam(i_node1, param_name.encode('utf-8'))
-        array_size = GetNeuronParamSize(i_node1, param_name.encode('utf-8'))
+        array_size = GetNeuronParamSize(i_node1, param_name)
         row_arr = numpy.asarray(<float[:array_size]>first)
         data_list.append(row_arr)
 
@@ -905,7 +905,7 @@ def llapi_getNeuronVar(int i_node, int n_node, object var_name):
     cdef float* first = NESTGPU_GetNeuronVar(i_node,
                                        n_node, var_name.encode('utf-8'))
 
-    cdef int array_size = GetNeuronVarSize(i_node, var_name.encode('utf-8'))
+    cdef int array_size = GetNeuronVarSize(i_node, var_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -932,7 +932,7 @@ def llapi_getNeuronPtVar(object nodes, object var_name):
     n_node = len(nodes)
     cdef float* first = NESTGPU_GetNeuronPtVar(&llapi_h.pylist_to_int_vec(nodes)[0],
                                        n_node, var_name.encode('utf-8'))
-    cdef int array_size = GetNeuronVarSize(nodes[0], var_name.encode('utf-8'))
+    cdef int array_size = GetNeuronVarSize(nodes[0], var_name)
     ret = numpy.asarray(<float[:n_node*array_size]>first)
     if (array_size>1):
         ret = ret.reshape((n_node, array_size))
@@ -948,7 +948,7 @@ def llapi_getArrayVar(int i_node, int n_node, object var_name):
     for j_node in range(n_node):
         i_node1 = i_node + j_node
         first = NESTGPU_GetArrayVar(i_node1, var_name.encode('utf-8'))
-        array_size = GetNeuronVarSize(i_node1, var_name.encode('utf-8'))
+        array_size = GetNeuronVarSize(i_node1, var_name)
         row_arr = numpy.asarray(<float[:array_size]>first)
         data_list.append(row_arr)
 
@@ -963,7 +963,7 @@ def llapi_getNeuronListArrayVar(object node_list, object var_name):
     cdef float* first
     for i_node in node_list:
         first = NESTGPU_GetArrayVar(i_node, var_name.encode('utf-8'))
-        array_size = GetNeuronVarSize(i_node, var_name.encode('utf-8'))
+        array_size = GetNeuronVarSize(i_node, var_name)
         row_arr = numpy.asarray(<float[:array_size]>first)
         data_list.append(row_arr)
 
@@ -971,6 +971,22 @@ def llapi_getNeuronListArrayVar(object node_list, object var_name):
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+def llapi_getNeuronListArrayParam(node_list, param_name):
+    "Get neuron array parameter"
+    data_list = []
+    cdef float* first
+    for i_node in node_list:
+        first = NESTGPU_GetArrayParam(i_node, param_name.encode('utf-8'))
+        array_size = GetNeuronParamSize(i_node, param_name)
+        row_arr = numpy.asarray(<float[:array_size]>first)
+        data_list.append(row_arr)
+
+    ret = data_list
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
 
 def llapi_connectMpiInit(int argc, object var_name_list):
     "Initialize MPI connections"
@@ -986,6 +1002,18 @@ def llapi_mpiNp():
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+def llapi_getConnectionStatus(int i_source, int i_group, int i_conn):
+    cdef int i_target = 0
+    cdef unsigned char i_port = 0#''.encode('utf-8')
+    cdef unsigned char i_syn = 0#''.encode('utf-8')
+    cdef float delay = 0.0
+    cdef float weight = 0.0
+    ret = NESTGPU_GetConnectionStatus(i_source, i_group, i_conn,
+                    &i_target, &i_port, &i_syn, &delay, &weight)
+    ret_dict = {'target':i_target, 'port':ord(i_port), 'syn':ord(i_syn),
+            'delay':delay, 'weight':weight}
+    return ret_dict
 
 def llapi_getRecSpikeTimes(int i_node, int n_node):
     "Get recorded spike times for node group"
@@ -1105,7 +1133,7 @@ def llapi_getPortVarNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return var_name_list
 
-def GetPortParamNames(int i_node):
+def llapi_getPortParamNames(int i_node):
     "Get list of scalar parameter names"
     cdef int n_param = GetNPortParam(i_node)
     cdef char** param_name_pp = NESTGPU_GetPortParamNames(i_node)
@@ -1119,7 +1147,7 @@ def GetPortParamNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return param_name_list
 
-def GetArrayVarNames(int i_node):
+def llapi_getArrayVarNames(int i_node):
     "Get list of scalar variable names"
     cdef int n_var = GetNArrayVar(i_node)
     cdef char** var_name_pp = NESTGPU_GetArrayVarNames(i_node)
@@ -1133,7 +1161,7 @@ def GetArrayVarNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return var_name_list
 
-def GetArrayParamNames(int i_node):
+def llapi_getArrayParamNames(int i_node):
     "Get list of scalar parameter names"
     cdef int n_param = GetNArrayParam(i_node)
     cdef char** param_name_pp = NESTGPU_GetArrayParamNames(i_node)
@@ -1147,7 +1175,7 @@ def GetArrayParamNames(int i_node):
         raise ValueError(llapi_getErrorMessage())
     return param_name_list
 
-def GetGroupParamNames(int i_node):
+def llapi_getGroupParamNames(int i_node):
     "Get list of scalar parameter names"
     cdef int n_param = GetNGroupParam(i_node)
     cdef char** param_name_pp = NESTGPU_GetGroupParamNames(i_node)
@@ -1165,3 +1193,6 @@ def llapi_remoteCreate(int i_host, object model, int n, int n_port):
     print('using cython llapi_remoteCreate() to create {} {}(s)'.format(n, model))
     return NESTGPU_RemoteCreate(i_host, model.encode('utf-8'), n, n_port)
 
+def llapi_createSynGroup(object model_name):
+    print('using llapi_createSynGroup() to create {}'.format(model_name))
+    return NESTGPU_CreateSynGroup(model_name.encode('utf-8'))

@@ -161,6 +161,11 @@ cdef extern from "nestgpu_C.h":
     char **NESTGPU_GetGroupParamNames(int i_node)
     int NESTGPU_RemoteCreate(int i_host, char *model_name, int n_neuron,
                  int n_port)
+    int NESTGPU_CreateSynGroup(char *model_name)
+    int NESTGPU_GetConnectionStatus(int i_source, int i_group, int i_conn,
+                    int *i_target, unsigned char *port,
+                    unsigned char *syn_group, float *delay,
+                    float *weight)
     int NESTGPU_SetNestedLoopAlgo(int nested_loop_algo);
 
 
@@ -212,7 +217,6 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_MpiFinalize()
     unsigned int *NESTGPU_RandomInt(size_t n)
     float *NESTGPU_RandomUniform(size_t n)
-    int NESTGPU_CreateSynGroup(char *model_name)
     int NESTGPU_IsSynGroupParam(int i_syn_group, char *param_name)
     int NESTGPU_GetSynGroupParamIdx(int i_syn_group, char *param_name)
     int NESTGPU_GetNRecSpikeTimes(int i_node)

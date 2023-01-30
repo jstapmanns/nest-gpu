@@ -10,9 +10,9 @@ print(ngpu.GetStatus(syn_group))
 ngpu.SetStatus(syn_group, {"fact":5.0, "offset":6.0})
 print(ngpu.GetStatus(syn_group))
 
-fact = ngpu.GetSynGroupParam(syn_group, "fact")
+fact = ngpu.GetStatus(syn_group, "fact")
 print("fact: ", fact)
-offset = ngpu.GetSynGroupParam(syn_group, "offset")
+offset = ngpu.GetStatus(syn_group, "offset")
 print("offset: ", offset)
 
 print(ngpu.GetStatus(syn_group, "fact"))
