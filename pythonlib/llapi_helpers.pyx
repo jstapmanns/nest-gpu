@@ -8,15 +8,46 @@ from libcpp.vector cimport vector
 '''
 class definitions
 '''
-class ConnectionId(object):
-    def __init__(self, i_source, i_group, i_conn):
-        self.i_source = i_source
-        self.i_group = i_group
-        self.i_conn = i_conn
-
 class SynGroup(object):
     def __init__(self, i_syn_group):
         self.i_syn_group = i_syn_group
+
+distribution_dict = {
+    "none": 0,
+    "array": 1,
+    "normal": 2,
+    "normal_clipped": 3
+}
+
+# the following must match the enum NestedLoopAlgo in nested_loop.h
+class NestedLoopAlgo:
+    BlockStep = 0
+    CumulSum = 1
+    Simple = 2
+    ParallelInner = 3
+    ParallelOuter = 4
+    Frame1D = 5
+    Frame2D = 6
+    Smart1D = 7
+    Smart2D = 8
+
+class ConnectionList(object):
+    def __init__(self, conn_list):
+        if (type(conn_list)!=list) & (type(conn_list)!=tuple):
+            raise ValueError("ConnectionList object can be initialized only"
+                             " with a list or a tuple of connection indexes")
+        self.conn_list = conn_list
+    def __getitem__(self, i):
+        if type(i)==slice:
+            return ConnectionList(self.conn_list[i])
+        elif type(i)==int:
+            return ConnectionList([self.conn_list[i]])
+        else:
+            raise ValueError("ConnectionList index error")
+    def __len__(self):
+        return len(self.conn_list)
+    def ToList(self):
+        return self.conn_list
 
 class NodeSeq(object):
     def __init__(self, i0, n=1):

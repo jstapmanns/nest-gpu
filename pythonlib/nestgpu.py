@@ -73,6 +73,12 @@ def Create(model_name, n_node=1, n_ports=1, status_dict=None):
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
+def SetNestedLoopAlgo(nested_loop_algo):
+    "Set CUDA nested loop algorithm"
+    ret = NESTGPU_SetNestedLoopAlgo(ctypes.c_int(nested_loop_algo))
+    if GetErrorCode() != 0:
+        raise ValueError(GetErrorMessage())
+    return ret
 
 def CreateRecord(file_name, var_name_list, i_node_list, i_port_list):
     "Create a record of neuron variables"
@@ -82,14 +88,12 @@ def CreateRecord(file_name, var_name_list, i_node_list, i_port_list):
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
-
 def GetRecordData(i_record):
     "Get record data"
     ret = ng_kernel.llapi_getRecordData(i_record)
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
-
 
 def GetNeuronStatus(nodes, var_name):
     "Get neuron group scalar or array variable or parameter"
