@@ -464,8 +464,7 @@ def GetStatus(gen_object, var_key=None):
     "Get neuron group, connection or synapse group status"
     if type(gen_object)==SynGroup:
         return ng_kernel.llapi_getSynGroupStatus(gen_object, var_key)
-
-    if type(gen_object)==NodeSeq:
+    elif type(gen_object)==NodeSeq:
         gen_object = gen_object.ToList()
     if (type(gen_object)==list) | (type(gen_object)==tuple):
         status_list = []
@@ -480,7 +479,7 @@ def GetStatus(gen_object, var_key=None):
             status_list.append(var_value)
         return status_list
     elif (var_key==None):
-        if (type(gen_object)==ConnectionId):
+        if (type(gen_object)==ConnectionList):
             status_dict = GetConnectionStatus(gen_object)
         elif (type(gen_object)==int):
             i_node = gen_object
@@ -500,9 +499,13 @@ def GetStatus(gen_object, var_key=None):
             raise ValueError("Unknown object type in GetStatus")
         return status_dict
     elif (type(var_key)==str) | (type(var_key)==bytes):
-        if (type(gen_object)==ConnectionId):
-            status_dict = GetConnectionStatus(gen_object)
-            return status_dict[var_key]
+        if (type(gen_object)==ConnectionList):
+            if IsConnectionFloatParam(var_key):
+                return GetConnectionFloatParam(gen_object, var_key)
+            elif IsConnectionIntParam(var_key):
+                return GetConnectionIntParam(gen_object, var_key)
+            else:
+                raise ValueError("Unknown connection parameter in GetStatus")
         elif (type(gen_object)==int):
             i_node = gen_object
             ret = GetNeuronStatus([i_node], var_key)[0]

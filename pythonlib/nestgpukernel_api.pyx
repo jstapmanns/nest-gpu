@@ -307,10 +307,10 @@ cdef int SetNeuronPtArrayParam(object nodes, object param_name, object param_lis
     cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
 
     cdef int array_size = len(param_list)
-    cdef numpy.ndarray param_array = list_to_numpy_array(param_list)
+    cdef numpy.ndarray param_arr = list_to_numpy_array(param_list)
     cdef int ret = NESTGPU_SetNeuronPtArrayParam(llapi_h.np_int_array_to_pointer(node_array),
                                           n_node, param_name.encode('utf-8'),
-                                          llapi_h.np_float_array_to_pointer(param_array),
+                                          llapi_h.np_float_array_to_pointer(param_arr),
                                           #&llapi_h.pylist_to_float_vec(param_list)[0],
                                           array_size)
     if llapi_getErrorCode() != 0:
@@ -459,6 +459,144 @@ cdef int SetDistributionFloatPtParam(object param_name, object arr):
 cdef int IsDistributionFloatParam(object param_name):
     "Check name of distribution float parameter"
     cdef int ret = (NESTGPU_IsDistributionFloatParam(param_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsConnectionFloatParam(object param_name):
+    "Check name of connection float parameter"
+    cdef int ret = (NESTGPU_IsConnectionFloatParam(param_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsConnectionIntParam(object param_name):
+    "Check name of connection int parameter"
+    if param_name=="index":
+        return 1
+    cdef int ret = (NESTGPU_IsConnectionIntParam(param_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetConnectionFloatParam(object conn, object param_name):
+    "Get the float parameter param_name from the connection list conn"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("GetConnectionFloatParam argument 1 type must be "
+                         "ConnectionList, int, list or tuple")
+
+    # TODO: Does this work?
+    cdef int n_conn = len(conn)
+    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    cdef float param_arr
+    NESTGPU_GetConnectionFloatParam(llapi_h.np_int_array_to_pointer(conn_arr),
+            n_conn, &param_arr, param_name.encode('utf-8'))
+    cdef float* first = &param_arr
+    ret = numpy.asarray(<float[:n_conn]>first)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetConnectionIntParam(object conn, object param_name):
+    "Get the integer parameter param_name from the connection list conn"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("GetConnectionIntParam argument 1 type must be "
+                         "ConnectionList, int, list or tuple")
+
+    if param_name=="index":
+        return conn
+
+    n_conn = len(conn)
+    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    cdef float param_arr
+    NESTGPU_GetConnectionIntParam(llapi_h.np_int_array_to_pointer(conn_arr),
+            n_conn, &param_arr, param_name.encode('utf-8'))
+    cdef float* first = &param_arr
+    ret = numpy.asarray(<int[:n_conn]>first)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetConnectionFloatParamDistr(object conn, object param_name):
+    "Set the float parameter param_name of the connection list conn "
+    "using values from a distribution of from an array"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("SetConnectionFloatParamDistr argument 1 type must be"
+                         " ConnectionList, int, list or tuple")
+
+    cdef int n_conn = len(conn)
+    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    cdef int ret = NESTGPU_SetConnectionFloatParamDistr(llapi_h.np_int_array_to_pointer(conn_arr),
+            n_conn, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetConnectionFloatParam(object conn, object param_name, float val):
+    "Set the float parameter param_name of the connection list conn "
+    "to the value val"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("SetConnectionFloatParam argument 1 type must be "
+                         "ConnectionList, int, list or tuple")
+
+    cdef int n_conn = len(conn)
+    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    cdef int ret = NESTGPU_SetConnectionFloatParam(llapi_h.np_int_array_to_pointer(conn_arr),
+            n_conn, val, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetConnectionIntParamArr(object conn, object param_name, object param_arr):
+    "Set the integer parameter param_name from the connection list conn"
+    "using values from the array param_arr"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("SetConnectionIntParamArr argument 1 type must be "
+                         "ConnectionList, int, list or tuple")
+
+    cdef int n_conn = len(conn)
+    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    # TODO: conn_ids need int64. Adapt list to numpy array!
+    cdef int ret = NESTGPU_SetConnectionIntParamArr(llapi_h.np_int_array_to_pointer(conn_arr),
+            n_conn, llapi_h.np_int_array_to_pointer(param_arr), param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetConnectionIntParam(object conn, object param_name, val):
+    "Set the integer parameter param_name from the connection list conn"
+    "to the value val"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("SetConnectionIntParam argument 1 type must be "
+                         "ConnectionList, int, list or tuple")
+    cdef int n_conn = len(conn)
+    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    cdef int ret = NESTGPU_SetConnectionIntParam(llapi_h.np_int_array_to_pointer(conn_arr),
+            n_conn, val, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -1416,5 +1554,50 @@ def llapi_setNeuronStatus(object nodes, object var_name, object val):
             SetNeuronPtArrayVar(nodes, var_name, val)
         else:
             raise ValueError("Unknown neuron variable or parameter")
+
+def llapi_setConnectionStatus(object conn, object param_name, object val):
+    "Set connection integer or float parameter"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("SetConnectionStatus argument 1 type must be "
+                         "ConnectionList, int, list or tuple")
+    if ((not IsConnectionFloatParam(param_name)) and
+        (not IsConnectionIntParam(param_name))):
+        raise ValueError("Unknown connection parameter in SetConnectionStatus")
+
+    if (type(val)==dict):
+        gc.disable()
+        for dict_param_name in val:
+            pval = val[dict_param_name]
+            if dict_param_name=="array":
+                distr_idx = distribution_dict["array"]
+                SetDistributionIntParam("distr_idx", distr_idx)
+                SetDistributionIntParam("vect_size", 1)
+                SetDistributionFloatPtParam("array_pt", pval)
+            elif dict_param_name=="distribution":
+                if ((not IsConnectionFloatParam(param_name))):
+                    raise ValueError("Only float connection parameters can be"
+                                     " assigned using distributions")
+                distr_idx = distribution_dict[pval]
+                SetDistributionIntParam("distr_idx", distr_idx)
+                SetDistributionIntParam("vect_size", 1)
+            elif IsDistributionFloatParam(dict_param_name):
+                SetDistributionScalParam(dict_param_name, pval)
+            else:
+                print("Parameter name: ", dict_param_name)
+                raise ValueError("Unknown distribution parameter")
+        # set values from array or from distribution
+        if IsConnectionFloatParam(param_name):
+            SetConnectionFloatParamDistr(conn, param_name)
+        else:
+            SetConnectionIntParamArr(conn, param_name, arr)
+        gc.enable()
+    elif IsConnectionFloatParam(param_name):
+        SetConnectionFloatParam(conn, param_name, val)
+    else:
+        SetConnectionIntParam(conn, param_name, val)
 
 

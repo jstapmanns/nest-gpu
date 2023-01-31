@@ -188,6 +188,20 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_SetDistributionVectParam(char *param_name, float val, int i);
     int NESTGPU_SetDistributionFloatPtParam(char *param_name, float *array_pt);
     int NESTGPU_IsDistributionFloatParam(char *param_name);
+    int NESTGPU_IsConnectionFloatParam(char *param_name);
+    int NESTGPU_IsConnectionIntParam(char *param_name);
+    int NESTGPU_GetConnectionFloatParam(int64_t *conn_ids, int64_t n_conn,
+            float *param_arr, char *param_name);
+    int NESTGPU_GetConnectionIntParam(int64_t *conn_ids, int64_t n_conn,
+            int *param_arr, char *param_name);
+    int NESTGPU_SetConnectionFloatParamDistr(int64_t *conn_ids, int64_t n_conn,
+            char *param_name);
+    int NESTGPU_SetConnectionFloatParam(int64_t *conn_ids, int64_t n_conn,
+            float val, char *param_name);
+    int NESTGPU_SetConnectionIntParamArr(int64_t *conn_ids, int64_t n_conn,
+            int *param_arr, char *param_name);
+    int NESTGPU_SetConnectionIntParam(int64_t *conn_ids, int64_t n_conn,
+            int val, char *param_name);
 
 
 '''
@@ -196,20 +210,6 @@ cdef extern from "nestgpu_C.h":
 	  			  int *port,
 	  			  unsigned char *syn_group, float *delay,
 	  			  float *weight);
-    int NESTGPU_IsConnectionFloatParam(char *param_name);
-    int NESTGPU_IsConnectionIntParam(char *param_name);
-    int NESTGPU_GetConnectionFloatParam(int64_t *conn_ids, int64_t n_conn,
-	  			      float *param_arr, char *param_name);
-    int NESTGPU_GetConnectionIntParam(int64_t *conn_ids, int64_t n_conn,
-	  			    int *param_arr, char *param_name);
-    int NESTGPU_SetConnectionFloatParamDistr(int64_t *conn_ids, int64_t n_conn,
-	  				   char *param_name);
-    int NESTGPU_SetConnectionIntParamArr(int64_t *conn_ids, int64_t n_conn,
-	  			       int *param_arr, char *param_name);
-    int NESTGPU_SetConnectionFloatParam(int64_t *conn_ids, int64_t n_conn,
-	  			      float val, char *param_name);
-    int NESTGPU_SetConnectionIntParam(int64_t *conn_ids, int64_t n_conn,
-	  			    int val, char *param_name);
 
     int NESTGPU_CreatePoissonGenerator(int n_node, float rate)
                  int n_node)
