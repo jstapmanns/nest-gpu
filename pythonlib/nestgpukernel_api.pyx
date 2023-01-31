@@ -4,7 +4,7 @@ from cython cimport view
 from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 cimport llapi_helpers as llapi_h
-from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId, list_to_numpy_array
+from llapi_helpers import SynGroup, NestedLoopAlgo, NodeSeq, RemoteNodeSeq, ConnectionList, list_to_numpy_array
 
 '''
 helping functions
@@ -188,6 +188,277 @@ cdef int GetNArrayParam(int i_node):
 cdef int GetNGroupParam(int i_node):
     "Get number of scalar parameters for a given node"
     cdef int ret = NESTGPU_GetNGroupParam(i_node)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronGroupParam(int i_node, object param_name):
+    "Check name of neuron scalar parameter"
+    cdef int ret = (NESTGPU_IsNeuronGroupParam(i_node, param_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronGroupParam(object nodes, object param_name, float val):
+    cdef int ret = NESTGPU_SetNeuronGroupParam(nodes.i0, nodes.n,
+            param_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronScalParam(int i_node, object param_name):
+    "Check name of neuron scalar parameter"
+    cdef int ret = (NESTGPU_IsNeuronScalParam(i_node, param_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronScalParam(int i_node, int n_node, object param_name, float val):
+    "Set neuron scalar parameter value"
+    cdef int ret = NESTGPU_SetNeuronScalParam(i_node, n_node, param_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronPortParam(int i_node, object param_name):
+    "Check name of neuron scalar parameter"
+    cdef int ret = (NESTGPU_IsNeuronPortParam(i_node, param_name.encode('utf-8'))!= 0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronArrayParam(int i_node, object param_name):
+    "Check name of neuron scalar parameter"
+    cdef int ret = (NESTGPU_IsNeuronArrayParam(i_node, param_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronArrayParam(int i_node, int n_node, object param_name, object param_list):
+    "Set neuron array parameter value"
+    cdef int array_size = len(param_list)
+    #TODO: is the following declaration correct?
+    cdef numpy.ndarray array = list_to_numpy_array(param_list)
+    cdef int ret = NESTGPU_SetNeuronArrayParam(i_node, n_node, param_name.encode('utf-8'),
+            llapi_h.np_float_array_to_pointer(array),
+            #&llapi_h.pylist_to_float_vec(param_list)[0],
+                                       array_size)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronIntVar(int i_node, object var_name):
+    "Check name of neuron integer variable"
+    cdef int ret = (NESTGPU_IsNeuronIntVar(i_node, var_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronIntVar(int i_node, int n_node, object var_name, int val):
+    "Set neuron integer variable value"
+    cdef int ret = NESTGPU_SetNeuronIntVar(i_node, n_node, var_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronScalVar(int i_node, object var_name):
+    "Check name of neuron scalar variable"
+    cdef int ret = (NESTGPU_IsNeuronScalVar(i_node, var_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronScalVar(int i_node, int n_node, object var_name, float val):
+    "Set neuron scalar variable value"
+    cdef int ret = NESTGPU_SetNeuronScalVar(i_node, n_node, var_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronPortVar(int i_node, object var_name):
+    "Check name of neuron scalar variable"
+    cdef int ret = (NESTGPU_IsNeuronPortVar(i_node, var_name.encode('utf-8'))!= 0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsNeuronArrayVar(int i_node, object var_name):
+    "Check name of neuron array variable"
+    cdef int ret = (NESTGPU_IsNeuronArrayVar(i_node, var_name.encode('utf-8'))!=0)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronArrayVar(int i_node, int n_node, object var_name, object var_list):
+    "Set neuron array variable value"
+    cdef int array_size = len(var_list)
+    cdef numpy.ndarray array = list_to_numpy_array(var_list)
+    cdef int ret = NESTGPU_SetNeuronArrayVar(i_node, n_node, var_name.encode('utf-8'),
+            llapi_h.np_float_array_to_pointer(array),
+            #&llapi_h.pylist_to_float_vec(var_list)[0],
+                                       array_size)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtArrayParam(object nodes, object param_name, object param_list):
+    "Set neuron list array parameter value"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+
+    cdef int array_size = len(param_list)
+    cdef numpy.ndarray param_array = list_to_numpy_array(param_list)
+    cdef int ret = NESTGPU_SetNeuronPtArrayParam(llapi_h.np_int_array_to_pointer(node_array),
+                                          n_node, param_name.encode('utf-8'),
+                                          llapi_h.np_float_array_to_pointer(param_array),
+                                          #&llapi_h.pylist_to_float_vec(param_list)[0],
+                                          array_size)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtIntVar(object nodes, object var_name, int val):
+    "Set neuron list integer variable value"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtIntVar(llapi_h.np_int_array_to_pointer(array),
+                                       n_node, var_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtScalVar(object nodes, object var_name, float val):
+    "Set neuron list scalar variable value"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtScalVar(llapi_h.np_int_array_to_pointer(array),
+                                       n_node, var_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtArrayVar(object nodes, object var_name, object var_list):
+    "Set neuron list array variable value"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+
+    cdef int array_size = len(var_list)
+    cdef numpy.ndarray var_array = list_to_numpy_array(var_list)
+    cdef int ret = NESTGPU_SetNeuronPtArrayVar(llapi_h.np_int_array_to_pointer(node_array),
+                                        n_node, var_name.encode('utf-8'),
+                                        llapi_h.np_float_array_to_pointer(var_array),
+                                        #&llapi_h.pylist_to_float_vec(var_list)[0],
+                                        array_size)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronScalParamDistr(int i_node, int n_node, object param_name):
+    "Set neuron scalar parameter value using distribution or array"
+    cdef int ret = NESTGPU_SetNeuronScalParamDistr(i_node,
+                                          n_node, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronScalVarDistr(int i_node, int n_node, object var_name):
+    "Set neuron scalar variable using distribution or array"
+    cdef int ret = NESTGPU_SetNeuronScalVarDistr(i_node,
+                                          n_node, var_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+
+cdef int SetNeuronPortParamDistr(int i_node,int  n_node, object param_name):
+    "Set neuron port parameter value using distribution or array"
+    cdef int ret = NESTGPU_SetNeuronPortParamDistr(i_node,
+                                          n_node, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPortVarDistr(int i_node,int  n_node, object var_name):
+    "Set neuron port variable using distribution or array"
+    cdef int ret = NESTGPU_SetNeuronPortVarDistr(i_node,
+                                        n_node, var_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtScalParamDistr(object nodes, object param_name):
+    "Set neuron list scalar parameter using distribution or array"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtScalParamDistr(llapi_h.np_int_array_to_pointer(node_array),
+                                            n_node, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtScalVarDistr(object nodes, object var_name):
+    "Set neuron list scalar variable using distribution or array"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtScalVarDistr(llapi_h.np_int_array_to_pointer(node_array),
+                                          n_node, var_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtPortParamDistr(object nodes, object param_name):
+    "Set neuron list port parameter using distribution or array"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtPortParamDistr(llapi_h.np_int_array_to_pointer(node_array),
+                                            n_node, param_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtPortVarDistr(object nodes, object var_name):
+    "Set neuron list port variable using distribution or array"
+    cdef int n_node = len(nodes)
+    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtPortVarDistr(llapi_h.np_int_array_to_pointer(node_array),
+                                          n_node, var_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetDistributionIntParam(object param_name, int val):
+    "Set distribution integer parameter"
+    cdef int ret = NESTGPU_SetDistributionIntParam(param_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetDistributionScalParam(object param_name, int val):
+    "Set distribution scalar parameter"
+    cdef int ret = NESTGPU_SetDistributionScalParam(param_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetDistributionVectParam(object param_name, int val, int i):
+    "Set distribution vector parameter"
+    cdef int ret = NESTGPU_SetDistributionVectParam(param_name.encode('utf-8'), val, i)
+    if GetErrorCode() != 0:
+        raise ValueError(GetErrorMessage())
+    return ret
+
+cdef int SetDistributionFloatPtParam(object param_name, object arr):
+    "Set distribution pointer to float parameter"
+    cdef numpy.ndarray array = list_to_numpy_array(arr)
+    cdef int ret = NESTGPU_SetDistributionFloatPtParam(param_name.encode('utf-8'),
+            llapi_h.np_int_array_to_pointer(array))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int IsDistributionFloatParam(object param_name):
+    "Check name of distribution float parameter"
+    cdef int ret = (NESTGPU_IsDistributionFloatParam(param_name.encode('utf-8'))!=0)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -541,6 +812,9 @@ def llapi_create(model, int n, int n_port):
     print('using cython llapi_create() to create {} {}(s)'.format(n, model))
     return NESTGPU_Create(model.encode('utf-8'), n, n_port)
 
+def llapi_setNestedLoopAlgo(int nested_loop_algo):
+    return NESTGPU_SetNestedLoopAlgo(nested_loop_algo)
+
 # TODO: should we change all the char* arguments to string as it is done in NEST?
 #       answer: no, we do not want to change the C api, so we use the char* array.
 # TODO: Does it make sense to replace python lists by numpy arrays?
@@ -620,172 +894,12 @@ def llapi_simulate():
     ret = NESTGPU_Simulate()
     return ret
 
-def llapi_setNeuronScalParam(int i_node, int n_node, object param_name, float val):
-    "Set neuron scalar parameter value"
-    ret = NESTGPU_SetNeuronScalParam(i_node, n_node, param_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronArrayParam(int i_node, int n_node, object param_name, object param_list):
-    "Set neuron array parameter value"
-    cdef int array_size = len(param_list)
-    array = list_to_numpy_array(param_list)
-    ret = NESTGPU_SetNeuronArrayParam(i_node, n_node, param_name.encode('utf-8'),
-            llapi_h.np_float_array_to_pointer(array),
-            #&llapi_h.pylist_to_float_vec(param_list)[0],
-                                       array_size)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
 def llapi_setNeuronPtScalParam(object nodes, object param_name, float val):
     "Set neuron list scalar parameter value"
     n_node = len(nodes)
     array = list_to_numpy_array(nodes)
     ret = NESTGPU_SetNeuronPtScalParam(llapi_h.np_int_array_to_pointer(array),
                                          n_node, param_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronPtArrayParam(object nodes, object param_name, object param_list):
-    "Set neuron list array parameter value"
-    n_node = len(nodes)
-    node_array = list_to_numpy_array(nodes)
-
-    array_size = len(param_list)
-    param_array = list_to_numpy_array(param_list)
-    ret = NESTGPU_SetNeuronPtArrayParam(llapi_h.np_int_array_to_pointer(node_array),
-                                          n_node, param_name.encode('utf-8'),
-                                          llapi_h.np_float_array_to_pointer(param_array),
-                                          #&llapi_h.pylist_to_float_vec(param_list)[0],
-                                          array_size)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronScalParam(int i_node, object param_name):
-    "Check name of neuron scalar parameter"
-    ret = (NESTGPU_IsNeuronScalParam(i_node, param_name.encode('utf-8'))!=0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronPortParam(int i_node, object param_name):
-    "Check name of neuron scalar parameter"
-    ret = (NESTGPU_IsNeuronPortParam(i_node, param_name.encode('utf-8'))!= 0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronArrayParam(int i_node, object param_name):
-    "Check name of neuron scalar parameter"
-    ret = (NESTGPU_IsNeuronArrayParam(i_node, param_name.encode('utf-8'))!=0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronGroupParam(int i_node, object param_name):
-    "Check name of neuron scalar parameter"
-    ret = (NESTGPU_IsNeuronGroupParam(i_node, param_name.encode('utf-8'))!=0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronIntVar(int i_node, int n_node, object var_name, int val):
-    "Set neuron integer variable value"
-    ret = NESTGPU_SetNeuronIntVar(i_node, n_node, var_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronScalVar(int i_node, int n_node, object var_name, float val):
-    "Set neuron scalar variable value"
-    ret = NESTGPU_SetNeuronScalVar(i_node, n_node, var_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronArrayVar(int i_node, int n_node, object var_name, object var_list):
-    "Set neuron array variable value"
-    array_size = len(var_list)
-    array = list_to_numpy_array(var_list)
-    ret = NESTGPU_SetNeuronArrayVar(i_node, n_node, var_name.encode('utf-8'),
-            llapi_h.np_float_array_to_pointer(array),
-            #&llapi_h.pylist_to_float_vec(var_list)[0],
-                                       array_size)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronPtIntVar(object nodes, object var_name, int val):
-    "Set neuron list integer variable value"
-    n_node = len(nodes)
-    array = list_to_numpy_array(nodes)
-    ret = NESTGPU_SetNeuronPtIntVar(llapi_h.np_int_array_to_pointer(array),
-                                       n_node, var_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronPtScalVar(object nodes, object var_name, float val):
-    "Set neuron list scalar variable value"
-    n_node = len(nodes)
-    array = list_to_numpy_array(nodes)
-    ret = NESTGPU_SetNeuronPtScalVar(llapi_h.np_int_array_to_pointer(array),
-                                       n_node, var_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronPtArrayVar(object nodes, object var_name, object var_list):
-    "Set neuron list array variable value"
-    n_node = len(nodes)
-    node_array = list_to_numpy_array(nodes)
-
-    array_size = len(var_list)
-    var_array = list_to_numpy_array(var_list)
-    ret = NESTGPU_SetNeuronPtArrayVar(llapi_h.np_int_array_to_pointer(node_array),
-                                        n_node, var_name.encode('utf-8'),
-                                        llapi_h.np_float_array_to_pointer(var_array),
-                                        #&llapi_h.pylist_to_float_vec(var_list)[0],
-                                        array_size)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronIntVar(int i_node, object var_name):
-    "Check name of neuron integer variable"
-    ret = (NESTGPU_IsNeuronIntVar(i_node, var_name.encode('utf-8'))!=0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronScalVar(int i_node, object var_name):
-    "Check name of neuron scalar variable"
-    ret = (NESTGPU_IsNeuronScalVar(i_node, var_name.encode('utf-8'))!=0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronPortVar(int i_node, object var_name):
-    "Check name of neuron scalar variable"
-    ret = (NESTGPU_IsNeuronPortVar(i_node, var_name.encode('utf-8'))!= 0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_isNeuronArrayVar(int i_node, object var_name):
-    "Check name of neuron array variable"
-    ret = (NESTGPU_IsNeuronArrayVar(i_node, var_name.encode('utf-8'))!=0)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_setNeuronGroupParam(object nodes, object param_name, float val):
-    ret = NESTGPU_SetNeuronGroupParam(nodes.i0, nodes.n,
-            param_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -1196,3 +1310,111 @@ def llapi_remoteCreate(int i_host, object model, int n, int n_port):
 def llapi_createSynGroup(object model_name):
     print('using llapi_createSynGroup() to create {}'.format(model_name))
     return NESTGPU_CreateSynGroup(model_name.encode('utf-8'))
+
+def llapi_setNeuronStatus(object nodes, object var_name, object val):
+    "Set neuron group scalar or array variable or parameter"
+    if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
+        raise ValueError("Unknown node type")
+    if (type(val)==dict):
+        if ((type(nodes)==NodeSeq
+             and (IsNeuronScalParam(nodes.i0, var_name)
+                  or IsNeuronScalVar(nodes.i0, var_name)
+                  or IsNeuronPortParam(nodes.i0, var_name)
+                  or IsNeuronPortVar(nodes.i0, var_name)))
+            or IsNeuronScalParam(nodes[0], var_name)
+            or IsNeuronScalVar(nodes[0], var_name)
+            or IsNeuronPortParam(nodes[0], var_name)
+            or IsNeuronPortVar(nodes[0], var_name)):
+            for dict_param_name in val:
+                pval = val[dict_param_name]
+                if dict_param_name=="array":
+                    SetDistributionFloatPtParam("array_pt", pval)
+                    distr_idx = distribution_dict["array"]
+                    SetDistributionIntParam("distr_idx", distr_idx)
+                elif dict_param_name=="distribution":
+                    distr_idx = distribution_dict[pval]
+                    SetDistributionIntParam("distr_idx", distr_idx)
+                else:
+                    if IsDistributionFloatParam(dict_param_name):
+                        if ((type(nodes)==NodeSeq
+                            and (IsNeuronScalParam(nodes.i0, var_name)
+                                 or IsNeuronScalVar(nodes.i0, var_name)))
+                            or IsNeuronScalParam(nodes[0], var_name)
+                            or IsNeuronScalVar(nodes[0], var_name)):
+                            SetDistributionIntParam("vect_size", 1)
+                            SetDistributionScalParam(dict_param_name, pval)
+                        elif ((type(nodes)==NodeSeq
+                            and (IsNeuronPortParam(nodes.i0, var_name)
+                                 or IsNeuronPortVar(nodes.i0, var_name)))
+                            or IsNeuronPortParam(nodes[0], var_name)
+                            or IsNeuronPortVar(nodes[0], var_name)):
+                            SetDistributionIntParam("vect_size", len(pval))
+                            for i, value in enumerate(pval):
+                                SetDistributionVectParam(dict_param_name,
+                                                          value, i)
+                    else:
+                        print("Parameter name: ", dict_param_name)
+                        raise ValueError("Unknown distribution parameter")
+            # set values from array or from distribution
+            if type(nodes)==NodeSeq:
+                if IsNeuronScalParam(nodes.i0, var_name):
+                    SetNeuronScalParamDistr(nodes.i0, nodes.n, var_name)
+                elif IsNeuronScalVar(nodes.i0, var_name):
+                    SetNeuronScalVarDistr(nodes.i0, nodes.n, var_name)
+                elif IsNeuronPortParam(nodes.i0, var_name):
+                    SetNeuronPortParamDistr(nodes.i0, nodes.n, var_name)
+                elif IsNeuronPortVar(nodes.i0, var_name):
+                    SetNeuronPortVarDistr(nodes.i0, nodes.n, var_name)
+                else:
+                    raise ValueError("Unknown neuron variable or parameter")
+
+            else:
+                if IsNeuronScalParam(nodes[0], var_name):
+                    SetNeuronPtScalParamDistr(nodes, var_name)
+                elif IsNeuronScalVar(nodes[0], var_name):
+                    SetNeuronPtScalVarDistr(nodes, var_name)
+                elif IsNeuronPortParam(nodes[0], var_name):
+                    SetNeuronPtPortParamDistr(nodes, var_name)
+                elif IsNeuronPortVar(nodes[0], var_name):
+                    SetNeuronPtPortVarDistr(nodes, var_name)
+                else:
+                    raise ValueError("Unknown neuron variable or parameter")
+
+        else:
+            print("Parameter or variable ", var_name)
+            raise ValueError("cannot be initialized by arrays or distributions")
+
+    elif type(nodes)==NodeSeq:
+        if IsNeuronGroupParam(nodes.i0, var_name):
+            SetNeuronGroupParam(nodes, var_name, val)
+        elif IsNeuronScalParam(nodes.i0, var_name):
+            SetNeuronScalParam(nodes.i0, nodes.n, var_name, val)
+        elif (IsNeuronPortParam(nodes.i0, var_name) |
+              IsNeuronArrayParam(nodes.i0, var_name)):
+            SetNeuronArrayParam(nodes.i0, nodes.n, var_name, val)
+        elif IsNeuronIntVar(nodes.i0, var_name):
+            SetNeuronIntVar(nodes.i0, nodes.n, var_name, val)
+        elif IsNeuronScalVar(nodes.i0, var_name):
+            SetNeuronScalVar(nodes.i0, nodes.n, var_name, val)
+        elif (IsNeuronPortVar(nodes.i0, var_name) |
+              IsNeuronArrayVar(nodes.i0, var_name)):
+            SetNeuronArrayVar(nodes.i0, nodes.n, var_name, val)
+        else:
+            raise ValueError("Unknown neuron variable or parameter")
+    else:
+        if IsNeuronScalParam(nodes[0], var_name):
+            SetNeuronPtScalParam(nodes, var_name, val)
+        elif (IsNeuronPortParam(nodes[0], var_name) |
+              IsNeuronArrayParam(nodes[0], var_name)):
+            SetNeuronPtArrayParam(nodes, var_name, val)
+        elif IsNeuronIntVar(nodes[0], var_name):
+            SetNeuronPtIntVar(nodes, var_name, val)
+        elif IsNeuronScalVar(nodes[0], var_name):
+            SetNeuronPtScalVar(nodes, var_name, val)
+        elif (IsNeuronPortVar(nodes[0], var_name) |
+              IsNeuronArrayVar(nodes[0], var_name)):
+            SetNeuronPtArrayVar(nodes, var_name, val)
+        else:
+            raise ValueError("Unknown neuron variable or parameter")
+
+

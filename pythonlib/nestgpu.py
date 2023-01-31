@@ -75,9 +75,9 @@ def Create(model_name, n_node=1, n_ports=1, status_dict=None):
 
 def SetNestedLoopAlgo(nested_loop_algo):
     "Set CUDA nested loop algorithm"
-    ret = NESTGPU_SetNestedLoopAlgo(ctypes.c_int(nested_loop_algo))
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    ret = ng_kernel.llapi_setNestedLoopAlgo(nested_loop_algo)
+    if ng_kernel.llapi_getErrorCode() != 0:
+        raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
 def CreateRecord(file_name, var_name_list, i_node_list, i_port_list):
@@ -136,51 +136,6 @@ def GetNeuronStatus(nodes, var_name):
         else:
             raise ValueError("Unknown neuron variable or parameter")
     return ret
-
-def SetNeuronStatus(nodes, var_name, val):
-    "Set neuron group scalar or array variable or parameter"
-    if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
-        raise ValueError("Unknown node type")
-    if (type(val)==dict):
-        array_size = len(nodes)
-        arr = ng_kernel.llapi_dictToArray(val, array_size)
-        for i in range(array_size):
-            SetNeuronStatus([nodes[i]], var_name, arr[i])
-        return
-
-    if type(nodes)==NodeSeq:
-        if ng_kernel.llapi_isNeuronGroupParam(nodes.i0, var_name):
-            ng_kernel.llapi_setNeuronGroupParam(nodes, var_name, val)
-        elif ng_kernel.llapi_isNeuronScalParam(nodes.i0, var_name):
-            ng_kernel.llapi_setNeuronScalParam(nodes.i0, nodes.n, var_name, val)
-        elif (ng_kernel.llapi_isNeuronPortParam(nodes.i0, var_name) |
-              ng_kernel.llapi_isNeuronArrayParam(nodes.i0, var_name)):
-            ng_kernel.llapi_setNeuronArrayParam(nodes.i0, nodes.n, var_name, val)
-        elif ng_kernel.llapi_isNeuronIntVar(nodes.i0, var_name):
-            ng_kernel.llapi_setNeuronIntVar(nodes.i0, nodes.n, var_name, val)
-        elif ng_kernel.llapi_isNeuronScalVar(nodes.i0, var_name):
-            ng_kernel.llapi_setNeuronScalVar(nodes.i0, nodes.n, var_name, val)
-        elif (ng_kernel.llapi_isNeuronPortVar(nodes.i0, var_name) |
-              ng_kernel.llapi_isNeuronArrayVar(nodes.i0, var_name)):
-            ng_kernel.llapi_setNeuronArrayVar(nodes.i0, nodes.n, var_name, val)
-        else:
-            raise ValueError("Unknown neuron variable or parameter")
-    else:
-        if ng_kernel.llapi_isNeuronScalParam(nodes[0], var_name):
-            ng_kernel.llapi_setNeuronPtScalParam(nodes, var_name, val)
-        elif (ng_kernel.llapi_isNeuronPortParam(nodes[0], var_name) |
-              ng_kernel.llapi_isNeuronArrayParam(nodes[0], var_name)):
-            ng_kernel.llapi_setNeuronPtArrayParam(nodes, var_name, val)
-        elif ng_kernel.llapi_isNeuronIntVar(nodes[0], var_name):
-            ng_kernel.llapi_setNeuronPtIntVar(nodes, var_name, val)
-        elif ng_kernel.llapi_isNeuronScalVar(nodes[0], var_name):
-            ng_kernel.llapi_setNeuronPtScalVar(nodes, var_name, val)
-        elif (ng_kernel.llapi_isNeuronPortVar(nodes[0], var_name) |
-              ng_kernel.llapi_isNeuronArrayVar(nodes[0], var_name)):
-            ng_kernel.llapi_setNeuronPtArrayVar(nodes, var_name, val)
-        else:
-            raise ValueError("Unknown neuron variable or parameter")
-
 
 def Calibrate():
     "Calibrate simulation"
@@ -278,10 +233,10 @@ def SetStatus(gen_object, params, val=None):
         return ret
     nodes = gen_object
     if val != None:
-         SetNeuronStatus(nodes, params, val)
+         ng_kernel.setNeuronStatus(nodes, params, val)
     elif type(params)==dict:
         for param_name in params:
-            SetNeuronStatus(nodes, param_name, params[param_name])
+            ng_kernel.setNeuronStatus(nodes, param_name, params[param_name])
     elif (type(params)==list)  | (type(params) is tuple):
         if len(params) != len(nodes):
             raise ValueError("List should have the same size as nodes")
@@ -289,7 +244,7 @@ def SetStatus(gen_object, params, val=None):
             if type(param_dict)!=dict:
                 raise ValueError("Type of list elements should be dict")
             for param_name in param_dict:
-                SetNeuronStatus(nodes, param_name, param_dict[param_name])
+                ng_kernel.setNeuronStatus(nodes, param_name, param_dict[param_name])
     else:
         raise ValueError("Wrong argument in SetStatus")
     if ng_kernel.llapi_getErrorCode() != 0:

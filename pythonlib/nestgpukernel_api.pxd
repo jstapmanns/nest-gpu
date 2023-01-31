@@ -167,30 +167,30 @@ cdef extern from "nestgpu_C.h":
                     unsigned char *syn_group, float *delay,
                     float *weight)
     int NESTGPU_SetNestedLoopAlgo(int nested_loop_algo);
-
-
-'''
     int NESTGPU_SetNeuronScalParamDistr(int i_node, int n_neuron,
-	  			      char *param_name);
+            char *param_name);
     int NESTGPU_SetNeuronScalVarDistr(int i_node, int n_neuron,
-	  			    char *var_name);
+            char *var_name);
     int NESTGPU_SetNeuronPortParamDistr(int i_node, int n_neuron,
-	  			      char *param_name);
+            char *param_name);
     int NESTGPU_SetNeuronPortVarDistr(int i_node, int n_neuron,
-	  			    char *var_name);
+            char *var_name);
     int NESTGPU_SetNeuronPtScalParamDistr(int *i_node, int n_neuron,
-	  				char *param_name);
+            char *param_name);
     int NESTGPU_SetNeuronPtScalVarDistr(int *i_node, int n_neuron,
-	  			      char *var_name);
+            char *var_name);
     int NESTGPU_SetNeuronPtPortParamDistr(int *i_node, int n_neuron,
-	  				char *param_name);
+            char *param_name);
     int NESTGPU_SetNeuronPtPortVarDistr(int *i_node, int n_neuron,
-	  			      char *var_name);
+            char *var_name);
     int NESTGPU_SetDistributionIntParam(char *param_name, int val);
     int NESTGPU_SetDistributionScalParam(char *param_name, float val);
     int NESTGPU_SetDistributionVectParam(char *param_name, float val, int i);
     int NESTGPU_SetDistributionFloatPtParam(char *param_name, float *array_pt);
     int NESTGPU_IsDistributionFloatParam(char *param_name);
+
+
+'''
     int NESTGPU_GetConnectionStatus(int64_t *conn_ids, int64_t n_conn,
 	  			  int *i_source, int *i_target,
 	  			  int *port,
