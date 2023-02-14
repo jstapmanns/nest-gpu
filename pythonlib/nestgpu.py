@@ -4,7 +4,7 @@ import os
 import unicodedata
 import gc
 import nestgpukernel_api as ng_kernel
-from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionId
+from llapi_helpers import SynGroup, NodeSeq, RemoteNodeSeq, ConnectionList
 
 
 print('\n              -- NEST GPU --\n')
@@ -19,6 +19,12 @@ conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
                   "fixed_indegree", "fixed_outdegree")
 
 ng_kernel.llapi_setOnException(1)
+
+def waitenter(val):
+    if (sys.version_info >= (3, 0)):
+        return input(val)
+    else:
+        return raw_input(val)
 
 def SetRandomSeed(seed):
     "Set seed for random number generation"
@@ -95,51 +101,9 @@ def GetRecordData(i_record):
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     return ret
 
-def GetNeuronStatus(nodes, var_name):
-    "Get neuron group scalar or array variable or parameter"
-    if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
-        raise ValueError("Unknown node type")
-    if type(nodes)==NodeSeq:
-        if (ng_kernel.llapi_isNeuronScalParam(nodes.i0, var_name) |
-            ng_kernel.llapi_isNeuronPortParam(nodes.i0, var_name)):
-            ret = ng_kernel.llapi_getNeuronParam(nodes.i0, nodes.n, var_name)
-        elif ng_kernel.llapi_isNeuronArrayParam(nodes.i0, var_name):
-            ret = ng_kernel.llapi_getArrayParam(nodes.i0, nodes.n, var_name)
-        elif (ng_kernel.llapi_isNeuronIntVar(nodes.i0, var_name)):
-            ret = ng_kernel.llapi_getNeuronIntVar(nodes.i0, nodes.n, var_name)
-        elif (ng_kernel.llapi_isNeuronScalVar(nodes.i0, var_name) |
-              ng_kernel.llapi_isNeuronPortVar(nodes.i0, var_name)):
-            ret = ng_kernel.llapi_getNeuronVar(nodes.i0, nodes.n, var_name)
-        elif ng_kernel.llapi_isNeuronArrayVar(nodes.i0, var_name):
-            ret = ng_kernel.llapi_getArrayVar(nodes.i0, nodes.n, var_name)
-        elif ng_kernel.llapi_isNeuronGroupParam(nodes.i0, var_name):
-            ret = ng_kernel.llapi_getNeuronStatus(nodes.ToList(), var_name)
-        else:
-            raise ValueError("Unknown neuron variable or parameter")
-    else:
-        if (ng_kernel.llapi_isNeuronScalParam(nodes[0], var_name) |
-            ng_kernel.llapi_isNeuronPortParam(nodes[0], var_name)):
-            ret = ng_kernel.llapi_getNeuronPtParam(nodes, var_name)
-        elif ng_kernel.llapi_isNeuronArrayParam(nodes[0], var_name):
-            ret = ng_kernel.llapi_getNeuronListArrayParam(nodes, var_name)
-        elif (ng_kernel.llapi_isNeuronIntVar(nodes[0], var_name)):
-            ret = ng_kernel.llapi_getNeuronPtIntVar(nodes, var_name)
-        elif (ng_kernel.llapi_isNeuronScalVar(nodes[0], var_name) |
-              ng_kernel.llapi_isNeuronPortVar(nodes[0], var_name)):
-            ret = ng_kernel.llapi_getNeuronPtVar(nodes, var_name)
-        elif ng_kernel.llapi_isNeuronArrayVar(nodes[0], var_name):
-            ret = ng_kernel.llapi_getNeuronListArrayVar(nodes, var_name)
-        elif ng_kernel.llapi_isNeuronGroupParam(nodes[0], var_name):
-            ret = []
-            for i_node in nodes:
-                ret.append(ng_kernel.llapi_getNeuronGroupParam(i_node, var_name))
-        else:
-            raise ValueError("Unknown neuron variable or parameter")
-    return ret
-
 def Calibrate():
     "Calibrate simulation"
-    ret = ng_kernel.llapi_nESTGPU_Calibrate()
+    ret = ng_kernel.llapi_calibrate()
     return ret
 
 
@@ -233,10 +197,10 @@ def SetStatus(gen_object, params, val=None):
         return ret
     nodes = gen_object
     if val != None:
-         ng_kernel.setNeuronStatus(nodes, params, val)
+         ng_kernel.llapi_setNeuronStatus(nodes, params, val)
     elif type(params)==dict:
         for param_name in params:
-            ng_kernel.setNeuronStatus(nodes, param_name, params[param_name])
+            ng_kernel.llapi_setNeuronStatus(nodes, param_name, params[param_name])
     elif (type(params)==list)  | (type(params) is tuple):
         if len(params) != len(nodes):
             raise ValueError("List should have the same size as nodes")
@@ -244,12 +208,18 @@ def SetStatus(gen_object, params, val=None):
             if type(param_dict)!=dict:
                 raise ValueError("Type of list elements should be dict")
             for param_name in param_dict:
-                ng_kernel.setNeuronStatus(nodes, param_name, param_dict[param_name])
+                ng_kernel.llapi_setNeuronStatus(nodes, param_name, param_dict[param_name])
     else:
         raise ValueError("Wrong argument in SetStatus")
     if ng_kernel.llapi_getErrorCode() != 0:
         raise ValueError(ng_kernel.llapi_getErrorMessage())
     gc.enable()
+
+# TODO: this function is usually called only somewhere within SetStatus
+#       only one of the tests is using it directly. I think, SetStatus()
+#       should be used instead.
+def SetSynGroupParam(syn_group, param_name, val):
+    return ng_kernel.llapi_setSynGroupParam(syn_group, param_name, val)
 
 def GetConnections(source=None, target=None, syn_group=-1):
     "Get connections between two node groups"
@@ -500,15 +470,15 @@ def GetStatus(gen_object, var_key=None):
         return status_dict
     elif (type(var_key)==str) | (type(var_key)==bytes):
         if (type(gen_object)==ConnectionList):
-            if IsConnectionFloatParam(var_key):
-                return GetConnectionFloatParam(gen_object, var_key)
-            elif IsConnectionIntParam(var_key):
-                return GetConnectionIntParam(gen_object, var_key)
+            if ng_kernel.llapi_isConnectionFloatParam(var_key):
+                return ng_kernel.llapi_getConnectionFloatParam(gen_object, var_key)
+            elif ng_kernel.llapi_isConnectionIntParam(var_key):
+                return ng_kernel.llapi_getConnectionIntParam(gen_object, var_key)
             else:
                 raise ValueError("Unknown connection parameter in GetStatus")
         elif (type(gen_object)==int):
             i_node = gen_object
-            ret = GetNeuronStatus([i_node], var_key)[0]
+            ret = ng_kernel.llapi_getNeuronStatus([i_node], var_key)[0]
             return ret
         else:
             raise ValueError("Unknown object type in GetStatus")
@@ -516,6 +486,7 @@ def GetStatus(gen_object, var_key=None):
     else:
         raise ValueError("Unknown key type in GetStatus", type(var_key))
 
+'''
 def GetConnectionStatus(conn_id):
     i_source = conn_id.i_source
     i_group = conn_id.i_group
@@ -525,6 +496,26 @@ def GetConnectionStatus(conn_id):
 
     conn_status_dict['source'] = i_source
     return conn_status_dict
+'''
+
+# In general, this function is included in GetStatus()
+# but some tests use it from outside, so we need a wrapper
+# TODO: Shouldn't we replace all GetNeuronStatus() by GetStatus()?
+def GetNeuronStatus(nodes, var_name):
+    return ng_kernel.llapi_getNeuronStatus(nodes, var_name)
+
+def GetConnectionStatus(conn):
+    "Get all parameters of connection list conn"
+    if (type(conn)==ConnectionList):
+        conn = conn.conn_list
+    elif (type(conn)==int):
+        conn = [conn]
+    if ((type(conn)!=list) and (type(conn)!=tuple)):
+        raise ValueError("GetConnectionStatus argument type must be "
+                         "ConnectionList, int, list or tuple")
+    status_list = ng_kernel.llapi_getConnectionStatus(conn)
+
+    return status_list
 
 def GetRecSpikeTimes(nodes):
     if type(nodes)!=NodeSeq:

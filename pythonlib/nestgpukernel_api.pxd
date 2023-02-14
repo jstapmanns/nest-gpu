@@ -1,4 +1,5 @@
 from libcpp cimport bool as cbool
+from libc.stdint cimport int64_t
 
 cdef extern from "nestgpu_C.h":
     int NESTGPU_MpiId()
@@ -53,15 +54,15 @@ cdef extern from "nestgpu_C.h":
                     int n_source, int i_target_host,
                     int *i_target, int n_target)
     int NESTGPU_Create(char *model_name, const int n_neuron, const int n_port) except +
-    int *NESTGPU_GetSeqSeqConnections(int i_source, int n_source, int i_target,
+    int64_t *NESTGPU_GetSeqSeqConnections(int i_source, int n_source, int i_target,
                       int n_target, int syn_group, int64_t *n_conn) except +
-    int *NESTGPU_GetSeqGroupConnections(int i_source, int n_source,
+    int64_t *NESTGPU_GetSeqGroupConnections(int i_source, int n_source,
                     int *i_target, int n_target,
                     int syn_group, int64_t *n_conn) except +
-    int *NESTGPU_GetGroupSeqConnections(int *i_source, int n_source,
+    int64_t *NESTGPU_GetGroupSeqConnections(int *i_source, int n_source,
                     int i_target, int n_target,
                     int syn_group, int64_t *n_conn) except +
-    int *NESTGPU_GetGroupGroupConnections(int *i_source, int n_source,
+    int64_t *NESTGPU_GetGroupGroupConnections(int *i_source, int n_source,
                       int *i_target, int n_target,
                       int syn_group, int64_t *n_conn) except +
     int NESTGPU_CreateRecord(char *file_name, char *var_name_arr[],
@@ -162,10 +163,9 @@ cdef extern from "nestgpu_C.h":
     int NESTGPU_RemoteCreate(int i_host, char *model_name, int n_neuron,
                  int n_port)
     int NESTGPU_CreateSynGroup(char *model_name)
-    int NESTGPU_GetConnectionStatus(int i_source, int i_group, int i_conn,
-                    int *i_target, unsigned char *port,
-                    unsigned char *syn_group, float *delay,
-                    float *weight)
+    int NESTGPU_GetConnectionStatus(int64_t *conn_ids, int64_t n_conn,
+            int *i_source, int *i_target, int *port,
+            unsigned char *syn_group, float *delay, float *weight);
     int NESTGPU_SetNestedLoopAlgo(int nested_loop_algo);
     int NESTGPU_SetNeuronScalParamDistr(int i_node, int n_neuron,
             char *param_name);

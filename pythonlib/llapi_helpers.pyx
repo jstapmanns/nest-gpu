@@ -121,9 +121,35 @@ cdef int* np_int_array_to_pointer(object array):
     if not numpy.issubdtype(array.dtype, numpy.integer):
         raise TypeError('array must be a NumPy array of ints, got {}'.format(array.dtype))
 
+    # TODO: can we return int* c_array directly?
     # Pointer to the first element in the Numpy array
     cdef int* array_int_ptr
     cdef int* c_array = <int *> malloc(len(array) * sizeof(int))
+    for i in range(len(array)):
+        c_array[i] = array[i]
+
+    array_int_ptr = &c_array[0]
+
+    return array_int_ptr
+
+cdef int64_t* np_int64_array_to_pointer(object array):
+    # TODO: implement check to ensure that array entries are not larger than int32
+    '''
+    function to get a pointer to the first element of a numpy array of dtype np.int32
+    returns int64_t* to the first element of array
+    '''
+    if not isinstance(array, numpy.ndarray):
+        raise TypeError('array must be a 1-dimensional NumPy array of ints, got {}'.format(
+            type(array)))
+    if not array.ndim == 1:
+        raise TypeError('array must be a 1-dimensional NumPy array, got {}-dimensional NumPy array'.format(
+            array.ndim))
+    if not numpy.issubdtype(array.dtype, numpy.integer):
+        raise TypeError('array must be a NumPy array of ints, got {}'.format(array.dtype))
+
+    # Pointer to the first element in the Numpy array
+    cdef int64_t* array_int_ptr
+    cdef int64_t* c_array = <int64_t *> malloc(len(array) * sizeof(int64_t))
     for i in range(len(array)):
         c_array[i] = array[i]
 
@@ -224,23 +250,19 @@ cdef object int_array_to_pylist(int* first, int n_elements):
 
     return pylist
 
-cdef object int_array_to_conn_list(int* first, int n_conn):
+cdef object int_array_to_conn_list(int64_t* first, int64_t n_conn):
     '''
     this function is used in the llapi_getConnections routines.
-    It converts a C array of ints into a pyhton list that
-    contains the connection IDs.
     '''
     #print('llapi: number of connections: {}'.format(n_conn))
-    conn_arr = numpy.asarray(<int[:3*n_conn]>first)
+    conn_arr = numpy.asarray(<int64_t[:n_conn]>first)
     conn_list = []
     for i_conn in range(n_conn):
-        conn_id = ConnectionId(conn_arr[i_conn*3], conn_arr[i_conn*3 + 1],
-                   conn_arr[i_conn*3 + 2])
-        conn_list.append(conn_id)
+        conn_list.append(conn_arr[i_conn])
 
-    conn_list
+    ret = ConnectionList(conn_list)
     #print('llpai: length of conn_list: {}'.format(len(conn_list)))
-    return conn_list
+    return ret
 
 cdef object float_array2d_to_numpy2d(float** first_p, int n_row, int n_col):
     '''
@@ -273,7 +295,7 @@ cdef char** pystring_list_to_cstring_array(object pystring_list):
 
     return cstring_array
 
-def list_to_numpy_array(object pylist):
+def list_to_numpy_array(object pylist, int int64_bit=False):
     '''
     This function converts a python list or a numpy array into a numpy array of int32
     or float32 depending on whether the first element of the input is an integer or a
@@ -284,24 +306,42 @@ def list_to_numpy_array(object pylist):
     consuming.
     '''
     if not (isinstance(pylist, list) or isinstance(pylist, numpy.ndarray)):
-        raise TypeError('pylist must be a 1-dimensional python list or numpy array of ints or floats, got {}'.format(
+        raise TypeError(
+                'pylist must be a 1-dimensional python list or numpy array of ints or floats, got {}'.format(
             type(pylist)))
     if len(pylist) == 0:
         raise TypeError('length of pylist should be > 0')
 
-    if numpy.issubdtype(type(pylist[0]), numpy.integer):
-        if max(pylist) > numpy.iinfo(numpy.int32).max:
-            raise TypeError('overflow: all values in pylist must be < max(int32), got {}> {}'.format(max(pylist), numpy.iinfo(numpy.int32).max))
-        if min(pylist) < numpy.iinfo(numpy.int32).min:
-            raise TypeError('overflow: all values in pylist must be > min(int32), got {}> {}'.format(min(pylist), numpy.iinfo(numpy.int32).min))
-        return numpy.array(pylist, dtype=numpy.int32, copy=True, order='C')
+    if not int64_bit:
+        if numpy.issubdtype(type(pylist[0]), numpy.integer):
+            if max(pylist) > numpy.iinfo(numpy.int32).max:
+                raise TypeError(
+                        'overflow: all values in pylist must be < max(int32), got {}> {}'.format(
+                            max(pylist), numpy.iinfo(numpy.int32).max))
+            if min(pylist) < numpy.iinfo(numpy.int32).min:
+                raise TypeError(
+                        'overflow: all values in pylist must be > min(int32), got {}> {}'.format(
+                            min(pylist), numpy.iinfo(numpy.int32).min))
+            return numpy.array(pylist, dtype=numpy.int32, copy=True, order='C')
 
-    elif numpy.issubdtype(type(pylist[0]), numpy.floating):
-        if max(pylist) > numpy.finfo(numpy.float32).max:
-            raise TypeError('overflow: all values in pylist must be < max(float32), got {}> {}'.format(max(pylist), numpy.finfo(numpy.float32).max))
-        if min(pylist) < numpy.finfo(numpy.float32).min:
-            raise TypeError('overflow: all values in pylist must be > min(float32), got {}> {}'.format(min(pylist), numpy.finfo(numpy.float32).min))
-        return numpy.array(pylist, dtype=numpy.float32, copy=True, order='C')
+        elif numpy.issubdtype(type(pylist[0]), numpy.floating):
+            if max(pylist) > numpy.finfo(numpy.float32).max:
+                raise TypeError(
+                        'overflow: all values in pylist must be < max(float32), got {}> {}'.format(
+                            max(pylist), numpy.finfo(numpy.float32).max))
+            if min(pylist) < numpy.finfo(numpy.float32).min:
+                raise TypeError(
+                        'overflow: all values in pylist must be > min(float32), got {}> {}'.format(
+                            min(pylist), numpy.finfo(numpy.float32).min))
+            return numpy.array(pylist, dtype=numpy.float32, copy=True, order='C')
 
+        else:
+            raise TypeError(
+                    'pylist must be a python list of ints or floats, got {}'.format(
+                type(pylist[0])))
     else:
-        raise TypeError('pylist must be a python list of ints or floats, got {}'.format(type(pylist[0])))
+        if numpy.issubdtype(type(pylist[0]), numpy.integer):
+            return numpy.array(pylist, dtype=numpy.int64, copy=True, order='C')
+        else:
+            raise TypeError('int64_bit is true but pylist is not of type int')
+

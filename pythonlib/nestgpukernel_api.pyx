@@ -3,8 +3,9 @@ from cython.operator cimport dereference as deref
 from cython cimport view
 from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
+from libc.stdint cimport int64_t
 cimport llapi_helpers as llapi_h
-from llapi_helpers import SynGroup, NestedLoopAlgo, NodeSeq, RemoteNodeSeq, ConnectionList, list_to_numpy_array
+from llapi_helpers import SynGroup, NestedLoopAlgo, NodeSeq, RemoteNodeSeq, ConnectionList, list_to_numpy_array, distribution_dict
 
 '''
 helping functions
@@ -24,19 +25,6 @@ cdef int GetNIntParam():
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
-
-cdef object GetIntParamNames():
-    "Get list of kernel int parameter names"
-
-    cdef int n_param = GetNIntParam()
-    cdef char** param_name_pp = NESTGPU_GetIntParamNames()
-    param_name_list = []
-    for i in range(n_param):
-        param_name_list.append(llapi_h.cstring_to_pystring(param_name_pp[i]))
-
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return param_name_list
 
 cdef int GetNFloatParam():
     "Get number of kernel float parameters"
@@ -67,6 +55,12 @@ cdef int SetSynGroupParam(object syn_group, object param_name, float val):
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+# This function is used outside in some tests, so we need a wrapper
+# TODO: however, I think it is used in SetStatus() which should be
+#       the only function available to the user.
+def llapi_setSynGroupParam(object syn_group, object param_name, float val):
+    return SetSynGroupParam(syn_group, param_name, val)
 
 cdef object RandomNormal(size_t n, float mean, float stddev):
     "Generate n random floats with normal distribution in CUDA memory"
@@ -238,7 +232,7 @@ cdef int SetNeuronArrayParam(int i_node, int n_node, object param_name, object p
     "Set neuron array parameter value"
     cdef int array_size = len(param_list)
     #TODO: is the following declaration correct?
-    cdef numpy.ndarray array = list_to_numpy_array(param_list)
+    array = list_to_numpy_array(param_list)
     cdef int ret = NESTGPU_SetNeuronArrayParam(i_node, n_node, param_name.encode('utf-8'),
             llapi_h.np_float_array_to_pointer(array),
             #&llapi_h.pylist_to_float_vec(param_list)[0],
@@ -292,7 +286,7 @@ cdef int IsNeuronArrayVar(int i_node, object var_name):
 cdef int SetNeuronArrayVar(int i_node, int n_node, object var_name, object var_list):
     "Set neuron array variable value"
     cdef int array_size = len(var_list)
-    cdef numpy.ndarray array = list_to_numpy_array(var_list)
+    array = list_to_numpy_array(var_list)
     cdef int ret = NESTGPU_SetNeuronArrayVar(i_node, n_node, var_name.encode('utf-8'),
             llapi_h.np_float_array_to_pointer(array),
             #&llapi_h.pylist_to_float_vec(var_list)[0],
@@ -304,10 +298,10 @@ cdef int SetNeuronArrayVar(int i_node, int n_node, object var_name, object var_l
 cdef int SetNeuronPtArrayParam(object nodes, object param_name, object param_list):
     "Set neuron list array parameter value"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes)
 
     cdef int array_size = len(param_list)
-    cdef numpy.ndarray param_arr = list_to_numpy_array(param_list)
+    param_arr = list_to_numpy_array(param_list)
     cdef int ret = NESTGPU_SetNeuronPtArrayParam(llapi_h.np_int_array_to_pointer(node_array),
                                           n_node, param_name.encode('utf-8'),
                                           llapi_h.np_float_array_to_pointer(param_arr),
@@ -320,7 +314,7 @@ cdef int SetNeuronPtArrayParam(object nodes, object param_name, object param_lis
 cdef int SetNeuronPtIntVar(object nodes, object var_name, int val):
     "Set neuron list integer variable value"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray array = list_to_numpy_array(nodes)
+    array = list_to_numpy_array(nodes)
     cdef int ret = NESTGPU_SetNeuronPtIntVar(llapi_h.np_int_array_to_pointer(array),
                                        n_node, var_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -330,7 +324,7 @@ cdef int SetNeuronPtIntVar(object nodes, object var_name, int val):
 cdef int SetNeuronPtScalVar(object nodes, object var_name, float val):
     "Set neuron list scalar variable value"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray array = list_to_numpy_array(nodes)
+    array = list_to_numpy_array(nodes)
     cdef int ret = NESTGPU_SetNeuronPtScalVar(llapi_h.np_int_array_to_pointer(array),
                                        n_node, var_name.encode('utf-8'), val)
     if llapi_getErrorCode() != 0:
@@ -340,10 +334,10 @@ cdef int SetNeuronPtScalVar(object nodes, object var_name, float val):
 cdef int SetNeuronPtArrayVar(object nodes, object var_name, object var_list):
     "Set neuron list array variable value"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes)
 
     cdef int array_size = len(var_list)
-    cdef numpy.ndarray var_array = list_to_numpy_array(var_list)
+    var_array = list_to_numpy_array(var_list)
     cdef int ret = NESTGPU_SetNeuronPtArrayVar(llapi_h.np_int_array_to_pointer(node_array),
                                         n_node, var_name.encode('utf-8'),
                                         llapi_h.np_float_array_to_pointer(var_array),
@@ -389,7 +383,7 @@ cdef int SetNeuronPortVarDistr(int i_node,int  n_node, object var_name):
 cdef int SetNeuronPtScalParamDistr(object nodes, object param_name):
     "Set neuron list scalar parameter using distribution or array"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes)
     cdef int ret = NESTGPU_SetNeuronPtScalParamDistr(llapi_h.np_int_array_to_pointer(node_array),
                                             n_node, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
@@ -399,7 +393,7 @@ cdef int SetNeuronPtScalParamDistr(object nodes, object param_name):
 cdef int SetNeuronPtScalVarDistr(object nodes, object var_name):
     "Set neuron list scalar variable using distribution or array"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes)
     cdef int ret = NESTGPU_SetNeuronPtScalVarDistr(llapi_h.np_int_array_to_pointer(node_array),
                                           n_node, var_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
@@ -409,7 +403,7 @@ cdef int SetNeuronPtScalVarDistr(object nodes, object var_name):
 cdef int SetNeuronPtPortParamDistr(object nodes, object param_name):
     "Set neuron list port parameter using distribution or array"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes)
     cdef int ret = NESTGPU_SetNeuronPtPortParamDistr(llapi_h.np_int_array_to_pointer(node_array),
                                             n_node, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
@@ -419,9 +413,165 @@ cdef int SetNeuronPtPortParamDistr(object nodes, object param_name):
 cdef int SetNeuronPtPortVarDistr(object nodes, object var_name):
     "Set neuron list port variable using distribution or array"
     cdef int n_node = len(nodes)
-    cdef numpy.ndarray node_array = list_to_numpy_array(nodes)
+    node_array = list_to_numpy_array(nodes)
     cdef int ret = NESTGPU_SetNeuronPtPortVarDistr(llapi_h.np_int_array_to_pointer(node_array),
                                           n_node, var_name.encode('utf-8'))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef int SetNeuronPtScalParam(object nodes, object param_name, float val):
+    "Set neuron list scalar parameter value"
+    cdef int n_node = len(nodes)
+    array = list_to_numpy_array(nodes)
+    cdef int ret = NESTGPU_SetNeuronPtScalParam(llapi_h.np_int_array_to_pointer(array),
+                                         n_node, param_name.encode('utf-8'), val)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronParam(int i_node, int n_node, object param_name):
+    "Get neuron parameter value"
+    cdef float* first = NESTGPU_GetNeuronParam(i_node,
+                                       n_node, param_name.encode('utf-8'))
+
+    cdef int array_size = GetNeuronParamSize(i_node, param_name)
+    ret = numpy.asarray(<float[:n_node*array_size]>first)
+    if (array_size>1):
+        ret = ret.reshape((n_node, array_size))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetArrayParam(int i_node, int n_node, object param_name):
+    "Get neuron array parameter"
+    data_list = []
+    cdef float* first
+    for j_node in range(n_node):
+        i_node1 = i_node + j_node
+        first = NESTGPU_GetArrayParam(i_node1, param_name.encode('utf-8'))
+        array_size = GetNeuronParamSize(i_node1, param_name)
+        row_arr = numpy.asarray(<float[:array_size]>first)
+        data_list.append(row_arr)
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return data_list
+
+cdef object GetNeuronIntVar(int i_node, int n_node, object var_name):
+    "Get neuron integer variable value"
+    cdef int* first = NESTGPU_GetNeuronIntVar(i_node,
+                                        n_node, var_name.encode('utf-8'))
+    data_array = numpy.asarray(<int[:n_node]>first)
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return data_array
+
+cdef object GetNeuronVar(int i_node, int n_node, object var_name):
+    "Get neuron variable value"
+    cdef float* first = NESTGPU_GetNeuronVar(i_node,
+                                       n_node, var_name.encode('utf-8'))
+
+    cdef int array_size = GetNeuronVarSize(i_node, var_name)
+    ret = numpy.asarray(<float[:n_node*array_size]>first)
+    if (array_size>1):
+        ret = ret.reshape((n_node, array_size))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetArrayVar(int i_node, int n_node, object var_name):
+    "Get neuron array variable"
+    data_list = []
+    cdef float* first
+    for j_node in range(n_node):
+        i_node1 = i_node + j_node
+        first = NESTGPU_GetArrayVar(i_node1, var_name.encode('utf-8'))
+        array_size = GetNeuronVarSize(i_node1, var_name)
+        row_arr = numpy.asarray(<float[:array_size]>first)
+        data_list.append(row_arr)
+
+    ret = data_list
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronPtParam(object nodes, object param_name):
+    "Get neuron list scalar parameter value"
+    n_node = len(nodes)
+    cdef float* first = NESTGPU_GetNeuronPtParam(&llapi_h.pylist_to_int_vec(nodes)[0],
+                                         n_node, param_name.encode('utf-8'))
+    cdef int array_size = GetNeuronParamSize(nodes[0], param_name)
+    ret = numpy.asarray(<float[:n_node*array_size]>first)
+    if (array_size>1):
+        ret = ret.reshape((n_node, array_size))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronListArrayParam(node_list, param_name):
+    "Get neuron array parameter"
+    data_list = []
+    cdef float* first
+    for i_node in node_list:
+        first = NESTGPU_GetArrayParam(i_node, param_name.encode('utf-8'))
+        array_size = GetNeuronParamSize(i_node, param_name)
+        row_arr = numpy.asarray(<float[:array_size]>first)
+        data_list.append(row_arr)
+
+    ret = data_list
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronPtIntVar(object nodes, object var_name):
+    "Get neuron list integer variable value"
+    n_node = len(nodes)
+    cdef int* first = NESTGPU_GetNeuronPtIntVar(&llapi_h.pylist_to_int_vec(nodes)[0],
+                                          n_node, var_name.encode('utf-8'))
+    data_array = numpy.asarray(<int[:n_node]>first)
+    # TODO: the reshaping below is required for compatibility but seems unnecessary
+    # because it simply adds an extra dimension which is removed in GetStatus()
+    ret = data_array.reshape((n_node,1))
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronPtVar(object nodes, object var_name):
+    "Get neuron list scalar variable value"
+    n_node = len(nodes)
+    cdef float* first = NESTGPU_GetNeuronPtVar(&llapi_h.pylist_to_int_vec(nodes)[0],
+                                       n_node, var_name.encode('utf-8'))
+    cdef int array_size = GetNeuronVarSize(nodes[0], var_name)
+    ret = numpy.asarray(<float[:n_node*array_size]>first)
+    if (array_size>1):
+        ret = ret.reshape((n_node, array_size))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronListArrayVar(object node_list, object var_name):
+    "Get neuron array variable"
+    data_list = []
+    cdef float* first
+    for i_node in node_list:
+        first = NESTGPU_GetArrayVar(i_node, var_name.encode('utf-8'))
+        array_size = GetNeuronVarSize(i_node, var_name)
+        row_arr = numpy.asarray(<float[:array_size]>first)
+        data_list.append(row_arr)
+
+    ret = data_list
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return ret
+
+cdef object GetNeuronGroupParam(int i_node, object param_name):
+    "Check name of neuron group parameter"
+    ret = NESTGPU_GetNeuronGroupParam(i_node, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -443,15 +593,15 @@ cdef int SetDistributionScalParam(object param_name, int val):
 cdef int SetDistributionVectParam(object param_name, int val, int i):
     "Set distribution vector parameter"
     cdef int ret = NESTGPU_SetDistributionVectParam(param_name.encode('utf-8'), val, i)
-    if GetErrorCode() != 0:
-        raise ValueError(GetErrorMessage())
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
     return ret
 
 cdef int SetDistributionFloatPtParam(object param_name, object arr):
     "Set distribution pointer to float parameter"
-    cdef numpy.ndarray array = list_to_numpy_array(arr)
+    array = list_to_numpy_array(arr)
     cdef int ret = NESTGPU_SetDistributionFloatPtParam(param_name.encode('utf-8'),
-            llapi_h.np_int_array_to_pointer(array))
+            llapi_h.np_float_array_to_pointer(array))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
@@ -470,6 +620,10 @@ cdef int IsConnectionFloatParam(object param_name):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+# wrapper of cdef function because it is also used directly in nestgpu.py
+def llapi_isConnectionFloatParam(object param_name):
+    return IsConnectionFloatParam(param_name)
+
 cdef int IsConnectionIntParam(object param_name):
     "Check name of connection int parameter"
     if param_name=="index":
@@ -478,6 +632,10 @@ cdef int IsConnectionIntParam(object param_name):
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+# wrapper of cdef function because it is also used directly in nestgpu.py
+def llapi_isConnectionIntParam(object param_name):
+    return IsConnectionIntParam(param_name)
 
 cdef object GetConnectionFloatParam(object conn, object param_name):
     "Get the float parameter param_name from the connection list conn"
@@ -489,17 +647,18 @@ cdef object GetConnectionFloatParam(object conn, object param_name):
         raise ValueError("GetConnectionFloatParam argument 1 type must be "
                          "ConnectionList, int, list or tuple")
 
-    # TODO: Does this work?
-    cdef int n_conn = len(conn)
-    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
-    cdef float param_arr
-    NESTGPU_GetConnectionFloatParam(llapi_h.np_int_array_to_pointer(conn_arr),
-            n_conn, &param_arr, param_name.encode('utf-8'))
-    cdef float* first = &param_arr
-    ret = numpy.asarray(<float[:n_conn]>first)
+    cdef int64_t n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
+    cdef float* param_arr = <float *> malloc(n_conn * sizeof(float))
+    NESTGPU_GetConnectionFloatParam(llapi_h.np_int64_array_to_pointer(conn_arr),
+            n_conn, param_arr, param_name.encode('utf-8'))
+    ret = numpy.asarray(<float[:n_conn]>param_arr)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+def llapi_getConnectionFloatParam(object conn, object param_name):
+    return GetConnectionFloatParam(conn, param_name)
 
 cdef object GetConnectionIntParam(object conn, object param_name):
     "Get the integer parameter param_name from the connection list conn"
@@ -514,16 +673,18 @@ cdef object GetConnectionIntParam(object conn, object param_name):
     if param_name=="index":
         return conn
 
-    n_conn = len(conn)
-    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
-    cdef float param_arr
-    NESTGPU_GetConnectionIntParam(llapi_h.np_int_array_to_pointer(conn_arr),
-            n_conn, &param_arr, param_name.encode('utf-8'))
-    cdef float* first = &param_arr
-    ret = numpy.asarray(<int[:n_conn]>first)
+    cdef int64_t n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
+    cdef int* param_arr = <int*> malloc(n_conn * sizeof(int))
+    NESTGPU_GetConnectionIntParam(llapi_h.np_int64_array_to_pointer(conn_arr),
+            n_conn, param_arr, param_name.encode('utf-8'))
+    ret = numpy.asarray(<int[:n_conn]>param_arr)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
     return ret
+
+def llapi_getConnectionIntParam(object conn, object param_name):
+    return GetConnectionIntParam(conn, param_name)
 
 cdef int SetConnectionFloatParamDistr(object conn, object param_name):
     "Set the float parameter param_name of the connection list conn "
@@ -536,9 +697,9 @@ cdef int SetConnectionFloatParamDistr(object conn, object param_name):
         raise ValueError("SetConnectionFloatParamDistr argument 1 type must be"
                          " ConnectionList, int, list or tuple")
 
-    cdef int n_conn = len(conn)
-    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
-    cdef int ret = NESTGPU_SetConnectionFloatParamDistr(llapi_h.np_int_array_to_pointer(conn_arr),
+    cdef int64_t n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
+    cdef int ret = NESTGPU_SetConnectionFloatParamDistr(llapi_h.np_int64_array_to_pointer(conn_arr),
             n_conn, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
@@ -555,9 +716,9 @@ cdef int SetConnectionFloatParam(object conn, object param_name, float val):
         raise ValueError("SetConnectionFloatParam argument 1 type must be "
                          "ConnectionList, int, list or tuple")
 
-    cdef int n_conn = len(conn)
-    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
-    cdef int ret = NESTGPU_SetConnectionFloatParam(llapi_h.np_int_array_to_pointer(conn_arr),
+    cdef int64_t n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
+    cdef int ret = NESTGPU_SetConnectionFloatParam(llapi_h.np_int64_array_to_pointer(conn_arr),
             n_conn, val, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
@@ -574,10 +735,10 @@ cdef int SetConnectionIntParamArr(object conn, object param_name, object param_a
         raise ValueError("SetConnectionIntParamArr argument 1 type must be "
                          "ConnectionList, int, list or tuple")
 
-    cdef int n_conn = len(conn)
-    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
+    cdef int64_t n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
     # TODO: conn_ids need int64. Adapt list to numpy array!
-    cdef int ret = NESTGPU_SetConnectionIntParamArr(llapi_h.np_int_array_to_pointer(conn_arr),
+    cdef int ret = NESTGPU_SetConnectionIntParamArr(llapi_h.np_int64_array_to_pointer(conn_arr),
             n_conn, llapi_h.np_int_array_to_pointer(param_arr), param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
@@ -593,9 +754,9 @@ cdef int SetConnectionIntParam(object conn, object param_name, val):
     if ((type(conn)!=list) and (type(conn)!=tuple)):
         raise ValueError("SetConnectionIntParam argument 1 type must be "
                          "ConnectionList, int, list or tuple")
-    cdef int n_conn = len(conn)
-    cdef numpy.ndarray conn_arr = list_to_numpy_array(conn)
-    cdef int ret = NESTGPU_SetConnectionIntParam(llapi_h.np_int_array_to_pointer(conn_arr),
+    cdef int64_t n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
+    cdef int ret = NESTGPU_SetConnectionIntParam(llapi_h.np_int64_array_to_pointer(conn_arr),
             n_conn, val, param_name.encode('utf-8'))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
@@ -661,7 +822,8 @@ def llapi_setSynSpecFloatParam(object param_name, float val):
 def llapi_setSynSpecFloatPtParam(object param_name, object arr):
     "Set synapse pointer to float parameter"
     array = list_to_numpy_array(arr)
-    print('using llapi_setSynSpecFloatPtParam() to set {}'.format(param_name))
+    #print('using llapi_setSynSpecFloatPtParam() to set {}'.format(param_name))
+
     # TODO: I think both of the cases below are covered by converting the
     #       intput arr to a numpy array.
     #if (type(arr) is list)  | (type(arr) is tuple):
@@ -689,7 +851,7 @@ def llapi_ruleArraySize(conn_dict, source, target):
     return array_size
 
 def llapi_setSynParamFromArray(param_name, par_dict, array_size):
-    print('using llapi_setSynParamFromArray to set {}'.format(param_name))
+    #print('using llapi_setSynParamFromArray to set {}'.format(param_name))
     arr_param_name = param_name + "_array"
     if (not llapi_synSpecIsFloatPtParam(arr_param_name)):
         raise ValueError("Synapse parameter cannot be set by arrays or distributions")
@@ -835,6 +997,19 @@ def llapi_setIntParam(object param_name, int val):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+def llapi_getIntParamNames():
+    "Get list of kernel int parameter names"
+
+    cdef int n_param = GetNIntParam()
+    cdef char** param_name_pp = NESTGPU_GetIntParamNames()
+    param_name_list = []
+    for i in range(n_param):
+        param_name_list.append(llapi_h.cstring_to_pystring(param_name_pp[i]))
+
+    if llapi_getErrorCode() != 0:
+        raise ValueError(llapi_getErrorMessage())
+    return param_name_list
+
 def llapi_getFloatParamNames():
     "Get list of kernel float parameter names"
 
@@ -888,16 +1063,16 @@ def llapi_getErrorMessage():
 def llapi_connect(int i_source_node, int i_target_node,
 			unsigned char port, unsigned char syn_group,
             float weight, float delay):
-    print('using cython llapi_connect()')
+    #print('using cython llapi_connect()')
     return NESTGPU_Connect(i_source_node, i_target_node,port, syn_group,
             weight, delay)
 
 def llapi_connectSeqSeq(int i_source, int n_source, int i_target, int n_target):
-    print('using cython llapi_connectSeqSeq()')
+    #print('using cython llapi_connectSeqSeq()')
     return NESTGPU_ConnectSeqSeq(i_source, n_source, i_target, n_target)
 
 def llapi_connectSeqGroup(int i_source, int n_source, object i_target, int n_target):
-    print('using cython llapi_connectSeqGroup()')
+    #print('using cython llapi_connectSeqGroup()')
     # TODO: The following line leads to unexpected behaviour if the indices in i_target
     #       are > 2147483647, which is the maximum int32.
     array = list_to_numpy_array(i_target)
@@ -905,13 +1080,13 @@ def llapi_connectSeqGroup(int i_source, int n_source, object i_target, int n_tar
             llapi_h.np_int_array_to_pointer(array), n_target)
 
 def llapi_connectGroupSeq(object i_source, int n_source, int i_target, int n_target):
-    print('using cython llapi_connectGroupSeq()')
+    #print('using cython llapi_connectGroupSeq()')
     array = list_to_numpy_array(i_source)
     return NESTGPU_ConnectGroupSeq(llapi_h.np_int_array_to_pointer(array),
             n_source, i_target, n_target)
 
 def llapi_connectGroupGroup(object i_source, int n_source, object i_target, int n_target):
-    print('using cython llapi_connectGroupGroup()')
+    #print('using cython llapi_connectGroupGroup()')
     source_array = list_to_numpy_array(i_source)
     target_array = list_to_numpy_array(i_target)
     return NESTGPU_ConnectGroupGroup(llapi_h.np_int_array_to_pointer(source_array),
@@ -919,27 +1094,27 @@ def llapi_connectGroupGroup(object i_source, int n_source, object i_target, int 
 
 def llapi_remoteConnectSeqSeq(int i_source_host, int i_source, int n_source,
         int i_target_host, int i_target, int n_target):
-    print('using cython llapi_remoteConnectSeqSeq()')
+    #print('using cython llapi_remoteConnectSeqSeq()')
     return NESTGPU_RemoteConnectSeqSeq(i_source_host, i_source, n_source,
             i_target_host, i_target, n_target)
 
 def llapi_remoteConnectSeqGroup(int i_source_host, int i_source, int n_source,
         int i_target_host, object i_target, int n_target):
-    print('using cython llapi_remoteConnectSeqGroup()')
+    #print('using cython llapi_remoteConnectSeqGroup()')
     array = list_to_numpy_array(i_target)
     return NESTGPU_RemoteConnectSeqGroup(i_source_host, i_source, n_source,
             i_target_host, llapi_h.np_int_array_to_pointer(array), n_target)
 
 def llapi_remoteConnectGroupSeq(int i_source_host, object i_source, int n_source,
         int i_target_host, int i_target, int n_target):
-    print('using cython llapi_remoteConnectGroupSeq()')
+    #print('using cython llapi_remoteConnectGroupSeq()')
     array = list_to_numpy_array(i_source)
     return NESTGPU_RemoteConnectGroupSeq(i_source_host, llapi_h.np_int_array_to_pointer(array),
             n_source, i_target_host, i_target, n_target)
 
 def llapi_remoteConnectGroupGroup(int i_source_host, object i_source, int n_source,
         int i_target_host, object i_target, int n_target):
-    print('using cython llapi_remoteConnectGroupGroup()')
+    #print('using cython llapi_remoteConnectGroupGroup()')
     source_array = list_to_numpy_array(i_source)
     target_array = list_to_numpy_array(i_target)
     return NESTGPU_RemoteConnectGroupGroup(i_source_host,
@@ -947,7 +1122,7 @@ def llapi_remoteConnectGroupGroup(int i_source_host, object i_source, int n_sour
             i_target_host, llapi_h.np_int_array_to_pointer(target_array), n_target)
 
 def llapi_create(model, int n, int n_port):
-    print('using cython llapi_create() to create {} {}(s)'.format(n, model))
+    #print('using cython llapi_create() to create {} {}(s)'.format(n, model))
     return NESTGPU_Create(model.encode('utf-8'), n, n_port)
 
 def llapi_setNestedLoopAlgo(int nested_loop_algo):
@@ -960,8 +1135,8 @@ def llapi_setNestedLoopAlgo(int nested_loop_algo):
 def llapi_getSeqSeqConnections(int i_source, int n_source, int i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getSeqSeqConnections()')
-    cdef int n_conn
-    cdef int* c_ret
+    cdef int64_t n_conn
+    cdef int64_t* c_ret
     c_ret = NESTGPU_GetSeqSeqConnections(i_source, n_source, i_target, n_target, syn_group, &n_conn)
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
     return ret
@@ -970,8 +1145,8 @@ def llapi_getSeqGroupConnections(int i_source, int n_source, object i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getSeqGroupConnections()')
     target_array = list_to_numpy_array(i_target)
-    cdef int n_conn
-    cdef int* c_ret
+    cdef int64_t n_conn
+    cdef int64_t* c_ret
     c_ret = NESTGPU_GetSeqGroupConnections(i_source, n_source,
             llapi_h.np_int_array_to_pointer(target_array), n_target, syn_group, &n_conn)
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
@@ -981,8 +1156,8 @@ def llapi_getGroupSeqConnections(object i_source, int n_source, int i_target,
         int n_target, int syn_group):
     #print('using cython llapi_getGroupSeqConnections()')
     source_array = list_to_numpy_array(i_source)
-    cdef int n_conn
-    cdef int* c_ret
+    cdef int64_t n_conn
+    cdef int64_t* c_ret
     c_ret = NESTGPU_GetGroupSeqConnections(llapi_h.np_int_array_to_pointer(source_array),
             n_source, i_target, n_target, syn_group, &n_conn)
     #if GetErrorCode() != 0:
@@ -995,8 +1170,8 @@ def llapi_getGroupGroupConnections(object i_source, int n_source, object i_targe
     #print('using cython llapi_getGroupGroupConnections()')
     source_array = list_to_numpy_array(i_source)
     target_array = list_to_numpy_array(i_target)
-    cdef int n_conn
-    cdef int* c_ret
+    cdef int64_t n_conn
+    cdef int64_t* c_ret
     c_ret = NESTGPU_GetGroupGroupConnections(llapi_h.np_int_array_to_pointer(source_array),
             n_source, llapi_h.np_int_array_to_pointer(target_array), n_target, syn_group, &n_conn)
     ret = llapi_h.int_array_to_conn_list(c_ret, n_conn)
@@ -1004,7 +1179,7 @@ def llapi_getGroupGroupConnections(object i_source, int n_source, object i_targe
 
 def llapi_createRecord(object file_name, object var_name_arr,
         object i_node_arr, object port_arr, int n_node):
-    print('using cython llapi_createRecord()')
+    #print('using cython llapi_createRecord()')
     node_array = list_to_numpy_array(i_node_arr)
     port_array = list_to_numpy_array(port_arr)
     ret = NESTGPU_CreateRecord(file_name.encode('utf-8'),
@@ -1014,7 +1189,7 @@ def llapi_createRecord(object file_name, object var_name_arr,
     return ret
 
 def llapi_getRecordData(int i_record):
-    print('using cython llapi_getRecordData()')
+    #print('using cython llapi_getRecordData()')
     n_row = GetRecordDataRows(i_record)
     n_col = GetRecordDataColumns(i_record)
     cdef float** data_array_p = NESTGPU_GetRecordData(i_record)
@@ -1023,23 +1198,13 @@ def llapi_getRecordData(int i_record):
     return ret
 
 def llapi_setSimTime(float sim_time):
-    print('using cython llapi_setSimTime()')
+    #print('using cython llapi_setSimTime()')
     ret = NESTGPU_SetSimTime(sim_time)
     return ret
 
 def llapi_simulate():
-    print('using cython llapi_simulate()')
+    #print('using cython llapi_simulate()')
     ret = NESTGPU_Simulate()
-    return ret
-
-def llapi_setNeuronPtScalParam(object nodes, object param_name, float val):
-    "Set neuron list scalar parameter value"
-    n_node = len(nodes)
-    array = list_to_numpy_array(nodes)
-    ret = NESTGPU_SetNeuronPtScalParam(llapi_h.np_int_array_to_pointer(array),
-                                         n_node, param_name.encode('utf-8'), val)
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
     return ret
 
 def llapi_calibrate():
@@ -1091,155 +1256,6 @@ def llapi_setVerbosityLevel(verbosity_level):
         raise ValueError(llapi_getErrorMessage())
     return ret
 
-def llapi_getNeuronParam(int i_node, int n_node, object param_name):
-    "Get neuron parameter value"
-    cdef float* first = NESTGPU_GetNeuronParam(i_node,
-                                       n_node, param_name.encode('utf-8'))
-
-    cdef int array_size = GetNeuronParamSize(i_node, param_name)
-    ret = numpy.asarray(<float[:n_node*array_size]>first)
-    if (array_size>1):
-        ret = ret.reshape((n_node, array_size))
-
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronPtParam(object nodes, object param_name):
-    "Get neuron list scalar parameter value"
-    n_node = len(nodes)
-    cdef float* first = NESTGPU_GetNeuronPtParam(&llapi_h.pylist_to_int_vec(nodes)[0],
-                                         n_node, param_name.encode('utf-8'))
-    cdef int array_size = GetNeuronParamSize(nodes[0], param_name)
-    ret = numpy.asarray(<float[:n_node*array_size]>first)
-    if (array_size>1):
-        ret = ret.reshape((n_node, array_size))
-
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getArrayParam(int i_node, int n_node, object param_name):
-    "Get neuron array parameter"
-    data_list = []
-    cdef float* first
-    for j_node in range(n_node):
-        i_node1 = i_node + j_node
-        first = NESTGPU_GetArrayParam(i_node1, param_name.encode('utf-8'))
-        array_size = GetNeuronParamSize(i_node1, param_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
-        data_list.append(row_arr)
-
-    ret = data_list
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronGroupParam(int i_node, object param_name):
-    "Check name of neuron group parameter"
-    ret = NESTGPU_GetNeuronGroupParam(i_node, param_name.encode('utf-8'))
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronIntVar(int i_node, int n_node, object var_name):
-    "Get neuron integer variable value"
-    cdef int* first = NESTGPU_GetNeuronIntVar(i_node,
-                                        n_node, var_name.encode('utf-8'))
-    data_array = numpy.asarray(<int[:n_node]>first)
-    ret = data_array
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronVar(int i_node, int n_node, object var_name):
-    "Get neuron variable value"
-    cdef float* first = NESTGPU_GetNeuronVar(i_node,
-                                       n_node, var_name.encode('utf-8'))
-
-    cdef int array_size = GetNeuronVarSize(i_node, var_name)
-    ret = numpy.asarray(<float[:n_node*array_size]>first)
-    if (array_size>1):
-        ret = ret.reshape((n_node, array_size))
-
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronPtIntVar(object nodes, object var_name):
-    "Get neuron list integer variable value"
-    n_node = len(nodes)
-    cdef int* first = NESTGPU_GetNeuronPtIntVar(&llapi_h.pylist_to_int_vec(nodes)[0],
-                                          n_node, var_name.encode('utf-8'))
-    data_array = numpy.asarray(<int[:n_node]>first)
-    # TODO: the reshaping below is required for compatibility but seems unnecessary
-    # because it simply adds an extra dimension which is removed in GetStatus()
-    ret = data_array.reshape((n_node,1))
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronPtVar(object nodes, object var_name):
-    "Get neuron list scalar variable value"
-    n_node = len(nodes)
-    cdef float* first = NESTGPU_GetNeuronPtVar(&llapi_h.pylist_to_int_vec(nodes)[0],
-                                       n_node, var_name.encode('utf-8'))
-    cdef int array_size = GetNeuronVarSize(nodes[0], var_name)
-    ret = numpy.asarray(<float[:n_node*array_size]>first)
-    if (array_size>1):
-        ret = ret.reshape((n_node, array_size))
-
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getArrayVar(int i_node, int n_node, object var_name):
-    "Get neuron array variable"
-    data_list = []
-    cdef float* first
-    for j_node in range(n_node):
-        i_node1 = i_node + j_node
-        first = NESTGPU_GetArrayVar(i_node1, var_name.encode('utf-8'))
-        array_size = GetNeuronVarSize(i_node1, var_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
-        data_list.append(row_arr)
-
-    ret = data_list
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronListArrayVar(object node_list, object var_name):
-    "Get neuron array variable"
-    data_list = []
-    cdef float* first
-    for i_node in node_list:
-        first = NESTGPU_GetArrayVar(i_node, var_name.encode('utf-8'))
-        array_size = GetNeuronVarSize(i_node, var_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
-        data_list.append(row_arr)
-
-    ret = data_list
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-def llapi_getNeuronListArrayParam(node_list, param_name):
-    "Get neuron array parameter"
-    data_list = []
-    cdef float* first
-    for i_node in node_list:
-        first = NESTGPU_GetArrayParam(i_node, param_name.encode('utf-8'))
-        array_size = GetNeuronParamSize(i_node, param_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
-        data_list.append(row_arr)
-
-    ret = data_list
-    if llapi_getErrorCode() != 0:
-        raise ValueError(llapi_getErrorMessage())
-    return ret
-
-
 def llapi_connectMpiInit(int argc, object var_name_list):
     "Initialize MPI connections"
     from mpi4py import MPI
@@ -1255,10 +1271,11 @@ def llapi_mpiNp():
         raise ValueError(llapi_getErrorMessage())
     return ret
 
+'''
 def llapi_getConnectionStatus(int i_source, int i_group, int i_conn):
     cdef int i_target = 0
-    cdef unsigned char i_port = 0#''.encode('utf-8')
-    cdef unsigned char i_syn = 0#''.encode('utf-8')
+    cdef unsigned char i_port = 0
+    cdef unsigned char i_syn = 0
     cdef float delay = 0.0
     cdef float weight = 0.0
     ret = NESTGPU_GetConnectionStatus(i_source, i_group, i_conn,
@@ -1266,10 +1283,46 @@ def llapi_getConnectionStatus(int i_source, int i_group, int i_conn):
     ret_dict = {'target':i_target, 'port':ord(i_port), 'syn':ord(i_syn),
             'delay':delay, 'weight':weight}
     return ret_dict
+'''
+
+def llapi_getConnectionStatus(object conn):
+    n_conn = len(conn)
+    conn_arr = list_to_numpy_array(conn, int64_bit=True)
+    cdef int* i_source = <int *> malloc(n_conn * sizeof(int))
+    cdef int* i_target = <int *> malloc(n_conn * sizeof(int))
+    cdef int* i_port = <int *> malloc(n_conn * sizeof(int))
+    cdef unsigned char* i_syn_group = <unsigned char *> malloc(n_conn * sizeof(unsigned char))
+    cdef float* delay = <float *> malloc(n_conn * sizeof(float))
+    cdef float* weight = <float *> malloc(n_conn * sizeof(float))
+
+    NESTGPU_GetConnectionStatus(llapi_h.np_int64_array_to_pointer(conn_arr),
+            n_conn, i_source, i_target, i_port, i_syn_group, delay, weight)
+
+    source_array = numpy.asarray(<int[:n_conn]>(i_source))
+    target_array = numpy.asarray(<int[:n_conn]>(i_target))
+    port_array = numpy.asarray(<int[:n_conn]>(i_port))
+    syn_array = numpy.asarray(<unsigned char[:n_conn]>(i_syn_group))
+    delay_array = numpy.asarray(<float[:n_conn]>(delay))
+    weight_array = numpy.asarray(<float[:n_conn]>(weight))
+
+    status_list = []
+    for i in range(n_conn):
+        status_dict = {}
+        status_dict["index"] = conn_arr[i]
+        status_dict["source"] = source_array[i]
+        status_dict["target"] = target_array[i]
+        status_dict["port"] = port_array[i]
+        status_dict["syn_group"] = syn_array[i]
+        status_dict["delay"] = delay_array[i]
+        status_dict["weight"] = weight_array[i]
+
+        status_list.append(status_dict)
+
+    return status_list
 
 def llapi_getRecSpikeTimes(int i_node, int n_node):
     "Get recorded spike times for node group"
-    print('using cython llapi_getRecSpikeTimes()')
+    #print('using cython llapi_getRecSpikeTimes()')
     cdef int* n_spike_times_pt
     cdef float** spike_times_pt
     spike_time_list = []
@@ -1442,11 +1495,11 @@ def llapi_getGroupParamNames(int i_node):
     return param_name_list
 
 def llapi_remoteCreate(int i_host, object model, int n, int n_port):
-    print('using cython llapi_remoteCreate() to create {} {}(s)'.format(n, model))
+    #print('using cython llapi_remoteCreate() to create {} {}(s)'.format(n, model))
     return NESTGPU_RemoteCreate(i_host, model.encode('utf-8'), n, n_port)
 
 def llapi_createSynGroup(object model_name):
-    print('using llapi_createSynGroup() to create {}'.format(model_name))
+    #print('using llapi_createSynGroup() to create {}'.format(model_name))
     return NESTGPU_CreateSynGroup(model_name.encode('utf-8'))
 
 def llapi_setNeuronStatus(object nodes, object var_name, object val):
@@ -1555,6 +1608,48 @@ def llapi_setNeuronStatus(object nodes, object var_name, object val):
         else:
             raise ValueError("Unknown neuron variable or parameter")
 
+def llapi_getNeuronStatus(nodes, var_name):
+    "Get neuron group scalar or array variable or parameter"
+    if (type(nodes)!=list) & (type(nodes)!=tuple) & (type(nodes)!=NodeSeq):
+        raise ValueError("Unknown node type")
+    if type(nodes)==NodeSeq:
+        if (IsNeuronScalParam(nodes.i0, var_name) |
+            IsNeuronPortParam(nodes.i0, var_name)):
+            ret = GetNeuronParam(nodes.i0, nodes.n, var_name)
+        elif IsNeuronArrayParam(nodes.i0, var_name):
+            ret = GetArrayParam(nodes.i0, nodes.n, var_name)
+        elif (IsNeuronIntVar(nodes.i0, var_name)):
+            ret = GetNeuronIntVar(nodes.i0, nodes.n, var_name)
+        elif (IsNeuronScalVar(nodes.i0, var_name) |
+              IsNeuronPortVar(nodes.i0, var_name)):
+            ret = GetNeuronVar(nodes.i0, nodes.n, var_name)
+        elif IsNeuronArrayVar(nodes.i0, var_name):
+            ret = GetArrayVar(nodes.i0, nodes.n, var_name)
+        elif IsNeuronGroupParam(nodes.i0, var_name):
+            ret = llapi_getNeuronStatus(nodes.ToList(), var_name)
+        else:
+            raise ValueError("Unknown neuron variable or parameter")
+    else:
+        if (IsNeuronScalParam(nodes[0], var_name) |
+            IsNeuronPortParam(nodes[0], var_name)):
+            ret = GetNeuronPtParam(nodes, var_name)
+        elif IsNeuronArrayParam(nodes[0], var_name):
+            ret = GetNeuronListArrayParam(nodes, var_name)
+        elif (IsNeuronIntVar(nodes[0], var_name)):
+            ret = GetNeuronPtIntVar(nodes, var_name)
+        elif (IsNeuronScalVar(nodes[0], var_name) |
+              IsNeuronPortVar(nodes[0], var_name)):
+            ret = GetNeuronPtVar(nodes, var_name)
+        elif IsNeuronArrayVar(nodes[0], var_name):
+            ret = GetNeuronListArrayVar(nodes, var_name)
+        elif IsNeuronGroupParam(nodes[0], var_name):
+            ret = []
+            for i_node in nodes:
+                ret.append(GetNeuronGroupParam(i_node, var_name))
+        else:
+            raise ValueError("Unknown neuron variable or parameter")
+    return ret
+
 def llapi_setConnectionStatus(object conn, object param_name, object val):
     "Set connection integer or float parameter"
     if (type(conn)==ConnectionList):
@@ -1569,7 +1664,7 @@ def llapi_setConnectionStatus(object conn, object param_name, object val):
         raise ValueError("Unknown connection parameter in SetConnectionStatus")
 
     if (type(val)==dict):
-        gc.disable()
+        #gc.disable()
         for dict_param_name in val:
             pval = val[dict_param_name]
             if dict_param_name=="array":
@@ -1593,8 +1688,9 @@ def llapi_setConnectionStatus(object conn, object param_name, object val):
         if IsConnectionFloatParam(param_name):
             SetConnectionFloatParamDistr(conn, param_name)
         else:
-            SetConnectionIntParamArr(conn, param_name, arr)
-        gc.enable()
+            # TODO: is this correct? pval is defined inside the loop.
+            SetConnectionIntParamArr(conn, param_name, pval)
+        #gc.enable()
     elif IsConnectionFloatParam(param_name):
         SetConnectionFloatParam(conn, param_name, val)
     else:
