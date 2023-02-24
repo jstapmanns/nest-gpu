@@ -4,7 +4,6 @@ from cython cimport view
 from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 from libcpp.vector cimport vector
-
 '''
 class definitions
 '''
@@ -201,6 +200,8 @@ cdef float* np_float_array_to_pointer(object array):
 
     # TODO: instead, the solution below seems to work properly.
     #       Still need to check: is the for loop slow?
+    #       Maybe not that relevant any more since connections are build inside the GPU and
+    #       this function is rarely used
     cdef float *c_array = <float *> malloc(len(array) * sizeof(float))
     for i in range(len(array)):
         c_array[i] = array[i]

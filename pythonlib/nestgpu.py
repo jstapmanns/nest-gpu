@@ -15,9 +15,6 @@ print(' Homepage: https://github.com/nest/nest-gpu')
 print()
 
 
-conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
-                  "fixed_indegree", "fixed_outdegree")
-
 ng_kernel.llapi_setOnException(1)
 
 def waitenter(val):
@@ -151,12 +148,32 @@ def Connect(source, target, conn_dict, syn_dict):
         elif ng_kernel.llapi_synSpecIsFloatParam(param_name):
             fpar = syn_dict[param_name]
             if (type(fpar)==dict):
-                # TODO: in the old version of the api, one does not have to exclude the
-                # case array_size == 0. However, here it would throw an error message
-                # and moreover, it seems unnecessary to pass a non-existing array to the
-                # c++ code.
-                if not (array_size == 0):
-                    ng_kernel.llapi_setSynParamFromArray(param_name, fpar, array_size)
+                for dict_param_name in fpar:
+                    pval = fpar[dict_param_name]
+                    if dict_param_name=="array":
+                        arr = pval
+                        arr_param_name = param_name + "_array"
+                        if (not ng_kernel.llapi_synSpecIsFloatPtParam(arr_param_name)):
+                            raise ValueError("Synapse parameter cannot be set"
+                                             " by arrays")
+
+                        ng_kernel.llapi_setSynSpecFloatPtParam(arr_param_name, arr)
+                    elif dict_param_name=="distribution":
+                        distr_idx = ng_kernel.distribution_dict[pval]
+                        distr_param_name = param_name + "_distribution"
+                        if (not ng_kernel.llapi_synSpecIsIntParam(distr_param_name)):
+                            raise ValueError("Synapse parameter cannot be set"
+                                             " by distributions")
+
+                        ng_kernel.llapi_setSynSpecIntParam(distr_param_name, distr_idx)
+                    else:
+                        param_name2 = param_name + "_" + dict_param_name
+                        if ng_kernel.llapi_synSpecIsFloatParam(param_name2):
+                            ng_kernel.llapi_setSynSpecFloatParam(param_name2, pval)
+                        else:
+                            print(param_name2)
+                            raise ValueError("Unknown distribution parameter")
+
             else:
                 ng_kernel.llapi_setSynSpecFloatParam(param_name, fpar)
 

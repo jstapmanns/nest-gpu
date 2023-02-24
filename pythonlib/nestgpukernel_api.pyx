@@ -7,6 +7,10 @@ from libc.stdint cimport int64_t
 cimport llapi_helpers as llapi_h
 from llapi_helpers import SynGroup, NestedLoopAlgo, NodeSeq, RemoteNodeSeq, ConnectionList, list_to_numpy_array, distribution_dict
 
+
+conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
+                  "fixed_indegree", "fixed_outdegree")
+
 '''
 helping functions
 '''
@@ -821,9 +825,9 @@ def llapi_setSynSpecFloatParam(object param_name, float val):
 
 def llapi_setSynSpecFloatPtParam(object param_name, object arr):
     "Set synapse pointer to float parameter"
+    #print('using llapi_setSynSpecFloatPtParam() to set {} with length {}'.format(
+    #    param_name, len(arr)))
     array = list_to_numpy_array(arr)
-    #print('using llapi_setSynSpecFloatPtParam() to set {}'.format(param_name))
-
     # TODO: I think both of the cases below are covered by converting the
     #       intput arr to a numpy array.
     #if (type(arr) is list)  | (type(arr) is tuple):
@@ -1689,6 +1693,7 @@ def llapi_setConnectionStatus(object conn, object param_name, object val):
             SetConnectionFloatParamDistr(conn, param_name)
         else:
             # TODO: is this correct? pval is defined inside the loop.
+            # This corresponds to the variable arr in the old api.
             SetConnectionIntParamArr(conn, param_name, pval)
         #gc.enable()
     elif IsConnectionFloatParam(param_name):
