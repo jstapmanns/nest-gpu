@@ -125,10 +125,10 @@ def Connect(source, target, conn_dict, syn_dict):
     ng_kernel.llapi_synSpecInit()
     for param_name in conn_dict:
         if param_name=="rule":
-            for i_rule in range(len(conn_rule_name)):
-                if conn_dict[param_name]==conn_rule_name[i_rule]:
+            for i_rule in range(len(ng_kernel.conn_rule_name)):
+                if conn_dict[param_name]==ng_kernel.conn_rule_name[i_rule]:
                     break
-            if i_rule < len(conn_rule_name):
+            if i_rule < len(ng_kernel.conn_rule_name):
                 ng_kernel.llapi_setConnSpecParam(param_name, i_rule)
             else:
                 raise ValueError("Unknown connection rule")
@@ -367,10 +367,10 @@ def RemoteConnect(i_source_host, source, i_target_host, target,
     ng_kernel.llapi_synSpecInit()
     for param_name in conn_dict:
         if param_name=="rule":
-            for i_rule in range(len(conn_rule_name)):
-                if conn_dict[param_name]==conn_rule_name[i_rule]:
+            for i_rule in range(len(ng_kernel.conn_rule_name)):
+                if conn_dict[param_name]==ng_kernel.conn_rule_name[i_rule]:
                     break
-            if i_rule < len(conn_rule_name):
+            if i_rule < len(ng_kernel.conn_rule_name):
                 ng_kernel.llapi_setConnSpecParam(param_name, i_rule)
             else:
                 raise ValueError("Unknown connection rule")

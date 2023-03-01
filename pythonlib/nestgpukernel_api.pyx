@@ -5,11 +5,9 @@ from libc.string cimport strlen, memcpy
 from libc.stdlib cimport malloc, free
 from libc.stdint cimport int64_t
 cimport llapi_helpers as llapi_h
-from llapi_helpers import SynGroup, NestedLoopAlgo, NodeSeq, RemoteNodeSeq, ConnectionList, list_to_numpy_array, distribution_dict
+from llapi_helpers import SynGroup, NestedLoopAlgo, NodeSeq, RemoteNodeSeq, ConnectionList, list_to_numpy_array, distribution_dict, conn_rule_name
 
 
-conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
-                  "fixed_indegree", "fixed_outdegree")
 
 '''
 helping functions

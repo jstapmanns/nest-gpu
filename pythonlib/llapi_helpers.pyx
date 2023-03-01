@@ -18,6 +18,9 @@ distribution_dict = {
     "normal_clipped": 3
 }
 
+conn_rule_name = ("one_to_one", "all_to_all", "fixed_total_number",
+                  "fixed_indegree", "fixed_outdegree")
+
 # the following must match the enum NestedLoopAlgo in nested_loop.h
 class NestedLoopAlgo:
     BlockStep = 0
