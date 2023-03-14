@@ -47,15 +47,14 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("Even to all")
 for i in range(len(conn_status_dict)):
-    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
-    print(sorted_dict)
+    print(conn_status_dict[i])
 print()
 print()
 
 # Even to all weight, delay
 conn_status_dict = ngpu.GetStatus(conn_id, ["weight", "delay"])
 print("########################################")
-print("Even to all weight, delay")
+print("Even to all weight, delat")
 for i in range(len(conn_status_dict)):
     print (conn_status_dict[i])
 print()
@@ -66,8 +65,7 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("All to odd")
 for i in range(len(conn_status_dict)):
-    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
-    print(sorted_dict)
+    print(conn_status_dict[i])
 print()
 print()
 
@@ -78,8 +76,7 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("Even to 3,4,5,6")
 for i in range(len(conn_status_dict)):
-    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
-    print(sorted_dict)
+    print(conn_status_dict[i])
 print()
 print()
 
@@ -90,8 +87,7 @@ conn_status_dict = ngpu.GetStatus(conn_id)
 print("########################################")
 print("3,4,5,6 to odd")
 for i in range(len(conn_status_dict)):
-    sorted_dict = {key: value for key, value in sorted(conn_status_dict[i].items())}
-    print(sorted_dict)
+    print(conn_status_dict[i])
 print()
 print()
 

@@ -444,7 +444,8 @@ cdef object GetNeuronParam(int i_node, int n_node, object param_name):
 
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 cdef object GetArrayParam(int i_node, int n_node, object param_name):
     "Get neuron array parameter"
@@ -454,7 +455,8 @@ cdef object GetArrayParam(int i_node, int n_node, object param_name):
         i_node1 = i_node + j_node
         first = NESTGPU_GetArrayParam(i_node1, param_name.encode('utf-8'))
         array_size = GetNeuronParamSize(i_node1, param_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
+        # TODO: return numpy array?
+        row_arr = numpy.asarray(<float[:array_size]>first).tolist()
         data_list.append(row_arr)
 
     if llapi_getErrorCode() != 0:
@@ -468,7 +470,8 @@ cdef object GetNeuronIntVar(int i_node, int n_node, object var_name):
     data_array = numpy.asarray(<int[:n_node]>first)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return data_array
+    # TODO: return numpy array?
+    return data_array.tolist()
 
 cdef object GetNeuronVar(int i_node, int n_node, object var_name):
     "Get neuron variable value"
@@ -482,7 +485,8 @@ cdef object GetNeuronVar(int i_node, int n_node, object var_name):
 
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 cdef object GetArrayVar(int i_node, int n_node, object var_name):
     "Get neuron array variable"
@@ -492,7 +496,8 @@ cdef object GetArrayVar(int i_node, int n_node, object var_name):
         i_node1 = i_node + j_node
         first = NESTGPU_GetArrayVar(i_node1, var_name.encode('utf-8'))
         array_size = GetNeuronVarSize(i_node1, var_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
+        # TODO: return numpy array?
+        row_arr = numpy.asarray(<float[:array_size]>first).tolist()
         data_list.append(row_arr)
 
     ret = data_list
@@ -512,7 +517,8 @@ cdef object GetNeuronPtParam(object nodes, object param_name):
 
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 cdef object GetNeuronListArrayParam(node_list, param_name):
     "Get neuron array parameter"
@@ -521,7 +527,8 @@ cdef object GetNeuronListArrayParam(node_list, param_name):
     for i_node in node_list:
         first = NESTGPU_GetArrayParam(i_node, param_name.encode('utf-8'))
         array_size = GetNeuronParamSize(i_node, param_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
+        # TODO: return numpy array?
+        row_arr = numpy.asarray(<float[:array_size]>first).tolist()
         data_list.append(row_arr)
 
     ret = data_list
@@ -540,7 +547,8 @@ cdef object GetNeuronPtIntVar(object nodes, object var_name):
     ret = data_array.reshape((n_node,1))
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 cdef object GetNeuronPtVar(object nodes, object var_name):
     "Get neuron list scalar variable value"
@@ -554,7 +562,8 @@ cdef object GetNeuronPtVar(object nodes, object var_name):
 
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 cdef object GetNeuronListArrayVar(object node_list, object var_name):
     "Get neuron array variable"
@@ -563,7 +572,8 @@ cdef object GetNeuronListArrayVar(object node_list, object var_name):
     for i_node in node_list:
         first = NESTGPU_GetArrayVar(i_node, var_name.encode('utf-8'))
         array_size = GetNeuronVarSize(i_node, var_name)
-        row_arr = numpy.asarray(<float[:array_size]>first)
+        # TODO: return numpy array?
+        row_arr = numpy.asarray(<float[:array_size]>first).tolist()
         data_list.append(row_arr)
 
     ret = data_list
@@ -657,7 +667,8 @@ cdef object GetConnectionFloatParam(object conn, object param_name):
     ret = numpy.asarray(<float[:n_conn]>param_arr)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 def llapi_getConnectionFloatParam(object conn, object param_name):
     return GetConnectionFloatParam(conn, param_name)
@@ -683,7 +694,8 @@ cdef object GetConnectionIntParam(object conn, object param_name):
     ret = numpy.asarray(<int[:n_conn]>param_arr)
     if llapi_getErrorCode() != 0:
         raise ValueError(llapi_getErrorMessage())
-    return ret
+    # TODO: return numpy array?
+    return ret.tolist()
 
 def llapi_getConnectionIntParam(object conn, object param_name):
     return GetConnectionIntParam(conn, param_name)
@@ -1314,7 +1326,9 @@ def llapi_getConnectionStatus(object conn):
         status_dict["source"] = source_array[i]
         status_dict["target"] = target_array[i]
         status_dict["port"] = port_array[i]
-        status_dict["syn_group"] = syn_array[i]
+        # TODO: The chr().encode() is probably not needed and was added to reproduce the behavior
+        # of the old interface.
+        status_dict["syn_group"] = chr(syn_array[i]).encode()
         status_dict["delay"] = delay_array[i]
         status_dict["weight"] = weight_array[i]
 
