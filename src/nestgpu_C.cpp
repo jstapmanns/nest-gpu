@@ -66,41 +66,65 @@ extern "C" {
   
   int NESTGPU_SetRandomSeed(unsigned long long seed)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SetRandomSeed %llu \n", seed);
+#endif
     ret = NESTGPU_instance->SetRandomSeed(seed);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetTimeResolution(float time_res)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SetTimeResolution %f \n", time_res);
+#endif
     ret = NESTGPU_instance->SetTimeResolution(time_res);
   } END_ERR_PROP return ret; }
 
   float NESTGPU_GetTimeResolution()
   { float ret = 0.0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetTimeResolution \n");
+#endif
     ret = NESTGPU_instance->GetTimeResolution();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetMaxSpikeBufferSize(int max_size)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SetMaxSpikeBufferSize %i \n", max_size);
+#endif
     ret = NESTGPU_instance->SetMaxSpikeBufferSize(max_size);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_GetMaxSpikeBufferSize()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetMaxSpikeBufferSize \n");
+#endif
     ret = NESTGPU_instance->GetMaxSpikeBufferSize();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetSimTime(float sim_time)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SetSimTime %f \n", sim_time);
+#endif
     ret = NESTGPU_instance->SetSimTime(sim_time);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetVerbosityLevel(int verbosity_level)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SetVerbosityLevel %i \n", verbosity_level);
+#endif
     ret = NESTGPU_instance->SetVerbosityLevel(verbosity_level);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetNestedLoopAlgo(int nested_loop_algo)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNestedLoopAlgo %i \n", nested_loop_algo);
+#endif
     ret = NESTGPU_instance->SetNestedLoopAlgo(nested_loop_algo);
   } END_ERR_PROP return ret; }
 
@@ -108,6 +132,9 @@ extern "C" {
   int NESTGPU_Create(char *model_name, int n_neuron, int n_port)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string model_name_str = std::string(model_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_Create \n");
+#endif
     NodeSeq neur = NESTGPU_instance->Create(model_name_str, n_neuron,
 						    n_port);
     ret = neur[0];
@@ -119,13 +146,13 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string file_name_str = std::string(file_name);
     std::vector<std::string> var_name_vect;
-    //std::cout << "NESTGPU_CreateRecord in nestgpu_C.cpp: vector of var_names:" << std::endl;
     for (int i=0; i<n_node; i++) {
       std::string var_name = std::string(var_name_arr[i]);
       var_name_vect.push_back(var_name);
-      //std::cout << var_name << ",  ";
     }
-    //std::cout << std::endl;
+#ifndef NDEBUG
+    printf ("NESTGPU_CreateRecord \n");
+#endif
     ret = NESTGPU_instance->CreateRecord
       (file_name_str, var_name_vect.data(), i_node_arr, port_arr,
        n_node);		       
@@ -133,6 +160,9 @@ extern "C" {
   
   int NESTGPU_GetRecordDataRows(int i_record)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetRecordDataRows %i \n", i_record);
+#endif
     std::vector<std::vector<float> > *data_vect_pt
       = NESTGPU_instance->GetRecordData(i_record);
 
@@ -141,6 +171,9 @@ extern "C" {
   
   int NESTGPU_GetRecordDataColumns(int i_record)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetRecordDataColumns %i \n", i_record);
+#endif
     std::vector<std::vector<float> > *data_vect_pt
       = NESTGPU_instance->GetRecordData(i_record);
     
@@ -149,6 +182,9 @@ extern "C" {
 
   float **NESTGPU_GetRecordData(int i_record)
   { float **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetRecordData %i \n", i_record);
+#endif
     std::vector<std::vector<float> > *data_vect_pt
       = NESTGPU_instance->GetRecordData(i_record);
     int nr = data_vect_pt->size();
@@ -163,6 +199,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronScalParam %i \t %i \t %s \t %f \n",
+            i_node, n_neuron, param_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronParam(i_node, n_neuron,
 					     param_name_str, val);
   } END_ERR_PROP return ret; }
@@ -172,15 +212,23 @@ extern "C" {
 				    int array_size)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);    
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronArrayParam %i \t %i \t %s \t %i \n",
+            i_node, n_neuron, param_name, array_size);
+#endif
       ret = NESTGPU_instance->SetNeuronParam(i_node, n_neuron,
 					       param_name_str, param,
 					       array_size);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetNeuronPtScalParam(int *i_node, int n_neuron,
-				     char *param_name,float val)
+				     char *param_name, float val)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtScalParam %i \t %s \t %f \n",
+            n_neuron, param_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronParam(i_node, n_neuron,
 					     param_name_str, val);
   } END_ERR_PROP return ret; }
@@ -190,6 +238,10 @@ extern "C" {
 				     int array_size)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);    
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtArrayParam %i \t %s \t %i \n",
+            n_neuron, param_name, array_size);
+#endif
     ret = NESTGPU_instance->SetNeuronParam(i_node, n_neuron,
 					     param_name_str, param,
 					     array_size);
@@ -199,6 +251,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronScalParam %i \t %s \n", i_node, param_name);
+#endif
     ret = NESTGPU_instance->IsNeuronScalParam(i_node, param_name_str);
   } END_ERR_PROP return ret; }
   
@@ -206,6 +261,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronPortParam %i \t %s \n", i_node, param_name);
+#endif
     ret = NESTGPU_instance->IsNeuronPortParam(i_node, param_name_str);
   } END_ERR_PROP return ret; }
   
@@ -213,6 +271,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronArrayParam %i \t %s \n", i_node, param_name);
+#endif
     ret = NESTGPU_instance->IsNeuronArrayParam(i_node, param_name_str);
   } END_ERR_PROP return ret; }
   
@@ -222,6 +283,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronIntVar %i \t %i \t %s \t %i \n",
+            i_node, n_neuron, var_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronIntVar(i_node, n_neuron,
 					     var_name_str, val);
   } END_ERR_PROP return ret; }
@@ -231,6 +296,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronScalVar %i \t %i \t %s \t %f \n",
+            i_node, n_neuron, var_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronVar(i_node, n_neuron,
 					     var_name_str, val);
   } END_ERR_PROP return ret; }
@@ -240,6 +309,10 @@ extern "C" {
 				    int array_size)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string var_name_str = std::string(var_name);    
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronArrayVar %i \t %i \t %s \t %i \n",
+            i_node, n_neuron, var_name, array_size);
+#endif
       ret = NESTGPU_instance->SetNeuronVar(i_node, n_neuron,
 					       var_name_str, var,
 					       array_size);
@@ -249,6 +322,10 @@ extern "C" {
 				     char *var_name, int val)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtIntVar %i \t %s \t %i \n",
+            n_neuron, var_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronIntVar(i_node, n_neuron,
 					      var_name_str, val);
   } END_ERR_PROP return ret; }
@@ -257,6 +334,10 @@ extern "C" {
 				     char *var_name, float val)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtScalVar %i \t %s \t %f \n",
+            n_neuron, var_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronVar(i_node, n_neuron,
 					     var_name_str, val);
   } END_ERR_PROP return ret; }
@@ -266,11 +347,14 @@ extern "C" {
 				     int array_size)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);    
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtArrayVar %i \t %s \t %i \n",
+            n_neuron, var_name, array_size);
+#endif
     ret = NESTGPU_instance->SetNeuronVar(i_node, n_neuron,
 					     var_name_str, var,
 					     array_size);
   } END_ERR_PROP return ret; }
-
 
   
   int NESTGPU_SetNeuronScalParamDistr(int i_node, int n_neuron,
@@ -278,6 +362,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronScalParamDistr %i \t %i \t %s \n",
+            i_node, n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->SetNeuronScalParamDistr(i_node, n_neuron,
 						    param_name_str);
   } END_ERR_PROP return ret; }
@@ -287,6 +375,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronScalVarDistr %i \t %i \t %s \n",
+            i_node, n_neuron, var_name);
+#endif
     ret = NESTGPU_instance->SetNeuronScalVarDistr(i_node, n_neuron,
 						  var_name_str);
   } END_ERR_PROP return ret; }
@@ -297,6 +389,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPortParamDistr %i \t %i \t %s \n",
+            i_node, n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->SetNeuronPortParamDistr(i_node, n_neuron,
 						    param_name_str);
   } END_ERR_PROP return ret; }
@@ -306,6 +402,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPortVarDistr %i \t %i \t %s \n",
+            i_node, n_neuron, var_name);
+#endif
     ret = NESTGPU_instance->SetNeuronPortVarDistr(i_node, n_neuron,
 						  var_name_str);
   } END_ERR_PROP return ret; }
@@ -314,6 +414,10 @@ extern "C" {
 					char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtScalParamDistr %i \t %s \n",
+            n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->SetNeuronPtScalParamDistr(i_node, n_neuron,
 						      param_name_str);
   } END_ERR_PROP return ret; }
@@ -322,6 +426,10 @@ extern "C" {
 					char *var_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtScalVarDistr %i \t %s \n",
+            n_neuron, var_name);
+#endif
     ret = NESTGPU_instance->SetNeuronPtScalVarDistr(i_node, n_neuron,
 						    var_name_str);
   } END_ERR_PROP return ret; }
@@ -330,6 +438,10 @@ extern "C" {
 					char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtPortParamDistr %i \t %s \n",
+            n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->SetNeuronPtPortParamDistr(i_node, n_neuron,
 						      param_name_str);
   } END_ERR_PROP return ret; }
@@ -338,6 +450,10 @@ extern "C" {
 				      char *var_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronPtPortVarDistr %i \t %s \n",
+            n_neuron, var_name);
+#endif
     ret = NESTGPU_instance->SetNeuronPtPortVarDistr(i_node, n_neuron,
 						    var_name_str);
   } END_ERR_PROP return ret; }
@@ -347,6 +463,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetDistributionIntParam %s \t %i \n",
+            param_name, val);
+#endif
     ret = NESTGPU_instance->SetDistributionIntParam(param_name_str, val);
   } END_ERR_PROP return ret; }
 
@@ -354,6 +474,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetDistributionScalParam %s \t %f \n",
+            param_name, val);
+#endif
     ret = NESTGPU_instance->SetDistributionScalParam(param_name_str, val);
   } END_ERR_PROP return ret; }
 
@@ -361,6 +485,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetDistributionVectParam %s \t %f \t %i \n",
+            param_name, val, i);
+#endif
     ret = NESTGPU_instance->SetDistributionVectParam(param_name_str, val, i);
   } END_ERR_PROP return ret; }
 
@@ -368,6 +496,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetDistributionFloatPtParam %s \n",
+            param_name);
+#endif
     ret = NESTGPU_instance->SetDistributionFloatPtParam(param_name_str,
 							array_pt);
   } END_ERR_PROP return ret; }
@@ -376,6 +508,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsDistributionFloatParam %s \n",
+            param_name);
+#endif
     ret = NESTGPU_instance->IsDistributionFloatParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -384,6 +520,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
 
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronIntVar %i \t %s \n",
+            i_node, var_name);
+#endif
     ret = NESTGPU_instance->IsNeuronIntVar(i_node, var_name_str);
   } END_ERR_PROP return ret; }
   
@@ -391,6 +531,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronScalVar %i \t %s \n",
+            i_node, var_name);
+#endif
     ret = NESTGPU_instance->IsNeuronScalVar(i_node, var_name_str);
   } END_ERR_PROP return ret; }
   
@@ -398,6 +542,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronPortVar %i \t %s \n",
+            i_node, var_name);
+#endif
     ret = NESTGPU_instance->IsNeuronPortVar(i_node, var_name_str);
   } END_ERR_PROP return ret; }
   
@@ -405,6 +553,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronArrayVar %i \t %s \n",
+            i_node, var_name);
+#endif
     ret = NESTGPU_instance->IsNeuronArrayVar(i_node, var_name_str);
   } END_ERR_PROP return ret; }
   
@@ -413,6 +565,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronParamSize %i \t %s \n",
+            i_node, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronParamSize(i_node, param_name_str);
   } END_ERR_PROP return ret; }
   
@@ -421,6 +577,10 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string var_name_str = std::string(var_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronVarSize %i \t %s \n",
+            i_node, var_name);
+#endif
     ret = NESTGPU_instance->GetNeuronVarSize(i_node, var_name_str);
   } END_ERR_PROP return ret; }
   
@@ -430,6 +590,10 @@ extern "C" {
   { float *ret = NULL; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronParam %i \t %i \t %s \n",
+            i_node, n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronParam(i_node, n_neuron,
 					     param_name_str);
   } END_ERR_PROP return ret; }
@@ -439,6 +603,10 @@ extern "C" {
 				 char *param_name)
   { float *ret = NULL; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronPtParam %i \t %s \n",
+            n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronParam(i_node, n_neuron,
 					     param_name_str);
   } END_ERR_PROP return ret; }
@@ -448,6 +616,10 @@ extern "C" {
   { float *ret = NULL; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetArrayParam %i \t %s \n",
+            i_node, param_name);
+#endif
     ret = NESTGPU_instance->GetArrayParam(i_node, param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -457,6 +629,10 @@ extern "C" {
   { int *ret = NULL; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronIntVar %i \t %i \t %s \n",
+            i_node, n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronIntVar(i_node, n_neuron,
 					      param_name_str);
   } END_ERR_PROP return ret; }
@@ -466,6 +642,10 @@ extern "C" {
 				   char *param_name)
   { int *ret = NULL; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronPtIntVar %i \t %s \n",
+            n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronIntVar(i_node, n_neuron,
 					      param_name_str);
   } END_ERR_PROP return ret; }
@@ -475,6 +655,10 @@ extern "C" {
   { float *ret = NULL; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronVar %i \t %i \t %s \n",
+            i_node, n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronVar(i_node, n_neuron,
 					   param_name_str);
   } END_ERR_PROP return ret; }
@@ -484,6 +668,10 @@ extern "C" {
 				 char *param_name)
   { float *ret = NULL; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronPtVar %i \t %s \n",
+            n_neuron, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronVar(i_node, n_neuron,
 					   param_name_str);
   } END_ERR_PROP return ret; }
@@ -492,77 +680,125 @@ extern "C" {
   { float *ret = NULL; BEGIN_ERR_PROP {
     
     std::string var_name_str = std::string(var_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetArrayVar %i \t %s \n",
+            i_node, var_name);
+#endif
     ret = NESTGPU_instance->GetArrayVar(i_node, var_name_str);
   } END_ERR_PROP return ret; }
 
 
   int NESTGPU_Calibrate()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_Calibrate \n");
+#endif
     ret = NESTGPU_instance->Calibrate();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_Simulate()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_Simulate \n");
+#endif
     ret = NESTGPU_instance->Simulate();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_StartSimulation()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_StartSimulation \n");
+#endif
     ret = NESTGPU_instance->StartSimulation();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SimulationStep()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SimulationStep \n");
+#endif
     ret = NESTGPU_instance->SimulationStep();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_EndSimulation()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_EndSimulation \n");
+#endif
     ret = NESTGPU_instance->EndSimulation();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_ConnectMpiInit(int argc, char *argv[])
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnectMpiInit \n");
+#endif
     ret = NESTGPU_instance->ConnectMpiInit(argc, argv);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_MpiId()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_MpiId \n");
+#endif
     ret = NESTGPU_instance->MpiId();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_MpiNp()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_MpiNp \n");
+#endif
     ret = NESTGPU_instance->MpiNp();
   } END_ERR_PROP return ret; }
+
   int NESTGPU_ProcMaster()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ProcMaster \n");
+#endif
     ret = NESTGPU_instance->ProcMaster();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_MpiFinalize()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_MpiFinalize \n");
+#endif
     ret = NESTGPU_instance->MpiFinalize();
   } END_ERR_PROP return ret; }
 
   unsigned int *NESTGPU_RandomInt(size_t n)
   { unsigned int *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RandomInt %zu \n", n);
+#endif
     ret = NESTGPU_instance->RandomInt(n);
   } END_ERR_PROP return ret; }
   
   float *NESTGPU_RandomUniform(size_t n)
   { float* ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RandomUniform %zu \n", n);
+#endif
     ret = NESTGPU_instance->RandomUniform(n);
   } END_ERR_PROP return ret; }
   
   float *NESTGPU_RandomNormal(size_t n, float mean, float stddev)
   { float *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RandomNormal %zu \t %f \t %f \n", n, mean, stddev);
+#endif
     ret = NESTGPU_instance->RandomNormal(n, mean, stddev);
   } END_ERR_PROP return ret; }
   
   float *NESTGPU_RandomNormalClipped(size_t n, float mean, float stddev,
 				       float vmin, float vmax, float vstep)
   { float *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RandomNormalClipped %zu \t %f \t %f \t %f \t %f \t %f \n",
+            n, mean, stddev, vmin, vmax, vstep);
+#endif
     ret = NESTGPU_instance->RandomNormalClipped(n, mean, stddev, vmin,
 						  vmax, vstep);
   } END_ERR_PROP return ret; }
@@ -571,71 +807,109 @@ extern "C" {
 		      int port, unsigned char syn_group,
 		      float weight, float delay)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_Connect %i \t %i \t %i \t %hhu \t %f \t %f \n",
+            i_source_node, i_target_node, port, syn_group, weight, delay);
+#endif
     ret = NESTGPU_instance->Connect(i_source_node, i_target_node,
 				    port, syn_group, weight, delay);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_ConnSpecInit()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnSpecInit \n");
+#endif
     ret = ConnSpec_instance.Init();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetConnSpecParam(char *param_name, int value)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetConnSpecParam %s \t %i \n", param_name, value);
+#endif
     ret = ConnSpec_instance.SetParam(param_name_str, value);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_ConnSpecIsParam(char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnSpecIsParam %s \n", param_name);
+#endif
     ret = ConnSpec::IsParam(param_name_str);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SynSpecInit()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_SynSpecInit \n");
+#endif
     ret = SynSpec_instance.Init();
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetSynSpecIntParam(char *param_name, int value)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetSynSpecIntParam %s \t %i \n", param_name, value);
+#endif
     ret = SynSpec_instance.SetParam(param_name_str, value);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetSynSpecFloatParam(char *param_name, float value)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetSynSpecFloatParam %s \t %f \n", param_name, value);
+#endif
     ret = SynSpec_instance.SetParam(param_name_str, value);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SetSynSpecFloatPtParam(char *param_name, float *array_pt)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetSynSpecFloatPtParam %s \n", param_name);
+#endif
     ret = SynSpec_instance.SetParam(param_name_str, array_pt);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SynSpecIsIntParam(char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SynSpecIsIntParam %s \n", param_name);
+#endif
     ret = SynSpec_instance.IsIntParam(param_name_str);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SynSpecIsFloatParam(char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SynSpecIsFloatParam %s \n", param_name);
+#endif
     ret = SynSpec_instance.IsFloatParam(param_name_str);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_SynSpecIsFloatPtParam(char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SynSpecIsFloatPtParam %s \n", param_name);
+#endif
     ret = SynSpec_instance.IsFloatPtParam(param_name_str);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_ConnectSeqSeq(int i_source, int n_source, int i_target,
 			      int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnectSeqSeq %i \t %i \t %i \t %i \n",
+            i_source, n_source, i_target, n_target);
+#endif
     ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
 				      ConnSpec_instance, SynSpec_instance); 
   } END_ERR_PROP return ret; }
@@ -643,28 +917,21 @@ extern "C" {
   int NESTGPU_ConnectSeqGroup(int i_source, int n_source, int *i_target,
 				int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnectSeqGroup %i \t %i \t %i \n",
+            i_source, n_source, n_target);
+#endif
     ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
 				      ConnSpec_instance, SynSpec_instance); 
-  } END_ERR_PROP return ret; }
-
-  int NESTGPU_ConnectSeqGroup_fake(int *i_target, int n_target)
-  { int ret = 0; BEGIN_ERR_PROP {
-    std::cout << "NESTGPU_ConnectSeqGroup() in nestgpu_C.cpp" << std::endl;
-    std::cout << "n_target = " << n_target << "  target list:" << std::endl;
-    for(int i = 0; i < n_target; i++)
-    {
-        std::cout << i << ": " << *i_target << " | ";
-        ++i_target;
-    }
-    std::cout << std::endl;
-    //ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
-	  //			      ConnSpec_instance, SynSpec_instance); 
-    ret = 5;
   } END_ERR_PROP return ret; }
 
   int NESTGPU_ConnectGroupSeq(int *i_source, int n_source, int i_target,
 				int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnectGroupSeq %i \t %i \t %i \n",
+            n_source, i_target, n_target);
+#endif
     ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
 				      ConnSpec_instance, SynSpec_instance);
   } END_ERR_PROP return ret; }
@@ -672,6 +939,9 @@ extern "C" {
   int NESTGPU_ConnectGroupGroup(int *i_source, int n_source, int *i_target,
 				  int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_ConnectGroupGroup %i \t %i \n", n_source, n_target);
+#endif
     ret = NESTGPU_instance->Connect(i_source, n_source, i_target, n_target,
 				      ConnSpec_instance, SynSpec_instance);
   } END_ERR_PROP return ret; }
@@ -680,6 +950,10 @@ extern "C" {
 				    int n_source, int i_target_host,
 				    int i_target, int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RemoteConnectSeqSeq %i \t %i \t %i \t %i \t %i \t %i \n",
+            i_source_host, i_source, n_source, i_target_host, i_target, n_target);
+#endif
     ret = NESTGPU_instance->RemoteConnect(i_source_host, i_source, n_source,
 					    i_target_host, i_target, n_target,
 					    ConnSpec_instance,
@@ -690,6 +964,10 @@ extern "C" {
 				      int n_source, int i_target_host,
 				      int *i_target, int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RemoteConnectSeqGroup %i \t %i \t %i \t %i \t %i \n",
+            i_source_host, i_source, n_source, i_target_host, n_target);
+#endif
     ret = NESTGPU_instance->RemoteConnect(i_source_host, i_source, n_source,
 					    i_target_host, i_target, n_target,
 					    ConnSpec_instance,
@@ -700,6 +978,10 @@ extern "C" {
 				      int n_source, int i_target_host,
 				      int i_target, int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RemoteConnectGroupSeq %i \t %i \t %i \t %i \t %i \n",
+            i_source_host, n_source, i_target_host, i_target, n_target);
+#endif
     ret = NESTGPU_instance->RemoteConnect(i_source_host, i_source, n_source,
 					    i_target_host, i_target, n_target,
 					    ConnSpec_instance,
@@ -711,6 +993,10 @@ extern "C" {
 					int n_source, int i_target_host,
 					int *i_target, int n_target)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_RemoteConnectGroupGroup %i \t %i \t %i \t %i \n",
+            i_source_host, n_source, i_target_host, n_target);
+#endif
     ret = NESTGPU_instance->RemoteConnect(i_source_host, i_source, n_source,
 					    i_target_host, i_target, n_target,
 					    ConnSpec_instance,
@@ -720,6 +1006,9 @@ extern "C" {
 
   char **NESTGPU_GetIntVarNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetIntVarNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetIntVarNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -737,6 +1026,9 @@ extern "C" {
 
   char **NESTGPU_GetScalVarNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetScalVarNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetScalVarNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -754,17 +1046,26 @@ extern "C" {
 
   int NESTGPU_GetNIntVar(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNIntVar %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNIntVar(i_node);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_GetNScalVar(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNScalVar %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNScalVar(i_node);
   } END_ERR_PROP return ret; }
 
 
   char **NESTGPU_GetPortVarNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetPortVarNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetPortVarNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -783,12 +1084,18 @@ extern "C" {
   
   int NESTGPU_GetNPortVar(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNPortVar %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNPortVar(i_node);
   } END_ERR_PROP return ret; }
 
   
   char **NESTGPU_GetScalParamNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetScalParamNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetScalParamNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -807,12 +1114,18 @@ extern "C" {
   
   int NESTGPU_GetNScalParam(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNScalParam %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNScalParam(i_node);
   } END_ERR_PROP return ret; }
 
 
   char **NESTGPU_GetGroupParamNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetGroupParamNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetGroupParamNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -831,12 +1144,18 @@ extern "C" {
   
   int NESTGPU_GetNGroupParam(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNGroupParam %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNGroupParam(i_node);
   } END_ERR_PROP return ret; }
 
 
   char **NESTGPU_GetPortParamNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetPortParamNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetPortParamNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -855,12 +1174,18 @@ extern "C" {
   
   int NESTGPU_GetNPortParam(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNPortParam %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNPortParam(i_node);
   } END_ERR_PROP return ret; }
 
 
   char **NESTGPU_GetArrayParamNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetArrayParamNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetArrayParamNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -879,11 +1204,17 @@ extern "C" {
   
   int NESTGPU_GetNArrayParam(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNArrayParam %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNArrayParam(i_node);
   } END_ERR_PROP return ret; }
 
   char **NESTGPU_GetArrayVarNames(int i_node)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetArrayVarNames %i \n", i_node);
+#endif
     std::vector<std::string> var_name_vect =
       NESTGPU_instance->GetArrayVarNames(i_node);
     char **var_name_array = (char**)malloc(var_name_vect.size()
@@ -901,6 +1232,9 @@ extern "C" {
 
   int NESTGPU_GetNArrayVar(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNArrayVar %i \n", i_node);
+#endif
     ret = NESTGPU_instance->GetNArrayVar(i_node);
   } END_ERR_PROP return ret; }
 
@@ -909,6 +1243,10 @@ extern "C" {
 					int i_target, int n_target,
 					int syn_group, int64_t *n_conn)
   { int64_t *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetSeqSeqConnections %i \t %i \t %i \t %i \t %i \n",
+            i_source, n_source, i_target, n_target, syn_group);
+#endif
       ret = NESTGPU_instance->GetConnections(i_source, n_source, i_target,
 					     n_target, syn_group, n_conn);
   } END_ERR_PROP return ret; }
@@ -917,6 +1255,10 @@ extern "C" {
 					  int *i_target_pt, int n_target,
 					  int syn_group, int64_t *n_conn)
   { int64_t *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetSeqGroupConnections %i \t %i \t %i \t %i \n",
+            i_source, n_source, n_target, syn_group);
+#endif
       ret = NESTGPU_instance->GetConnections(i_source, n_source, i_target_pt,
 					     n_target, syn_group, n_conn);
   } END_ERR_PROP return ret; }
@@ -925,6 +1267,10 @@ extern "C" {
 					  int i_target, int n_target,
 					  int syn_group, int64_t *n_conn)
   { int64_t *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetGroupSeqConnections %i \t %i \t %i \t %i \n",
+            n_source, i_target, n_target, syn_group);
+#endif
       ret = NESTGPU_instance->GetConnections(i_source_pt, n_source, i_target,
 					     n_target, syn_group, n_conn);
   } END_ERR_PROP return ret; }
@@ -933,6 +1279,10 @@ extern "C" {
 					    int *i_target_pt, int n_target,
 					    int syn_group, int64_t *n_conn)
   { int64_t *ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetGroupGroupConnections %i \t %i \t %i \n",
+            n_source, n_target, syn_group);
+#endif
       ret = NESTGPU_instance->GetConnections(i_source_pt, n_source,
 					     i_target_pt, n_target,
 					     syn_group, n_conn);
@@ -944,6 +1294,9 @@ extern "C" {
 				  unsigned char *syn_group, float *delay,
 				  float *weight)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetConnectionStatus \n");
+#endif
       ret = NESTGPU_instance->GetConnectionStatus
 	(conn_ids, n_conn, i_source, i_target, port, syn_group, delay,
 	 weight);
@@ -952,12 +1305,18 @@ extern "C" {
   int NESTGPU_IsConnectionFloatParam(char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_IsConnectionFloatParam %s \n", param_name);
+#endif
       ret = NESTGPU_instance->IsConnectionFloatParam(param_name_str);
   } END_ERR_PROP return ret; }
   
   int NESTGPU_IsConnectionIntParam(char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_IsConnectionIntParam %s \n", param_name);
+#endif
       ret = NESTGPU_instance->IsConnectionIntParam(param_name_str);
   } END_ERR_PROP return ret; }
   
@@ -965,6 +1324,9 @@ extern "C" {
 				      float *param_arr, char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetConnectionFloatParam %s \n", param_name);
+#endif
       ret = NESTGPU_instance->GetConnectionFloatParam(conn_ids, n_conn,
 						      param_arr,
 						      param_name_str);
@@ -974,6 +1336,9 @@ extern "C" {
 				    int *param_arr, char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetConnectionIntParam %s \n", param_name);
+#endif
       ret = NESTGPU_instance->GetConnectionIntParam(conn_ids, n_conn,
 						    param_arr,
 						    param_name_str);
@@ -983,6 +1348,9 @@ extern "C" {
 					   char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetConnectionFloatParamDistr %s \n", param_name);
+#endif
       ret = NESTGPU_instance->SetConnectionFloatParamDistr(conn_ids, n_conn,
 							   param_name_str);
     } END_ERR_PROP return ret; }
@@ -991,6 +1359,9 @@ extern "C" {
 				       int *param_arr, char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetConnectionIntParamArr %s \n", param_name);
+#endif
       ret = NESTGPU_instance->SetConnectionIntParamArr(conn_ids, n_conn,
 						       param_arr,
 						       param_name_str);
@@ -1000,6 +1371,9 @@ extern "C" {
 				      float val, char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetConnectionFloatParam %f \t %s \n", val, param_name);
+#endif
       ret = NESTGPU_instance->SetConnectionFloatParam(conn_ids, n_conn,
 						      val, param_name_str);
   } END_ERR_PROP return ret; }
@@ -1008,6 +1382,9 @@ extern "C" {
 				    int val, char *param_name)
   { int ret = 0; BEGIN_ERR_PROP {
       std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetConnectionIntParam %i \t %s \n", val, param_name);
+#endif
       ret = NESTGPU_instance->SetConnectionIntParam(conn_ids, n_conn,
 						    val, param_name_str);
   } END_ERR_PROP return ret; }
@@ -1015,18 +1392,27 @@ extern "C" {
   int NESTGPU_CreateSynGroup(char *model_name)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string model_name_str = std::string(model_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_CreateSynGroup %s \n", model_name);
+#endif
     ret = NESTGPU_instance->CreateSynGroup(model_name_str);
   } END_ERR_PROP return ret; }
 
 
   int NESTGPU_GetSynGroupNParam(int i_syn_group)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetSynGroupNParam %i \n", i_syn_group);
+#endif
     ret = NESTGPU_instance->GetSynGroupNParam(i_syn_group);
   } END_ERR_PROP return ret; }
 
   
   char **NESTGPU_GetSynGroupParamNames(int i_syn_group)
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetSynGroupParamNames %i \n", i_syn_group);
+#endif
     std::vector<std::string> name_vect =
       NESTGPU_instance->GetSynGroupParamNames(i_syn_group);
     char **name_array = (char**)malloc(name_vect.size()
@@ -1047,6 +1433,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsSynGroupParam %i \t %s \n", i_syn_group, param_name);
+#endif
     ret = NESTGPU_instance->IsSynGroupParam(i_syn_group, param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1055,6 +1444,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetSynGroupParamIdx %i \t %s \n", i_syn_group, param_name);
+#endif
     ret = NESTGPU_instance->GetSynGroupParamIdx(i_syn_group, param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1063,6 +1455,9 @@ extern "C" {
   { float ret = 0.0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetSynGroupParam %i \t %s \n", i_syn_group, param_name);
+#endif
     ret = NESTGPU_instance->GetSynGroupParam(i_syn_group, param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1071,6 +1466,9 @@ extern "C" {
   { float ret = 0.0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetSynGroupParam %i \t %s \t %f \n", i_syn_group, param_name, val);
+#endif
     ret = NESTGPU_instance->SetSynGroupParam(i_syn_group, param_name_str,
 					       val);
   } END_ERR_PROP return ret; }
@@ -1079,6 +1477,9 @@ extern "C" {
   int NESTGPU_ActivateSpikeCount(int i_node, int n_node)
   { int ret = 0; BEGIN_ERR_PROP {
     
+#ifndef NDEBUG
+    printf ("NESTGPU_ActivateSpikeCount %i \t %i \n", i_node, n_node);
+#endif
     ret = NESTGPU_instance->ActivateSpikeCount(i_node, n_node);
   } END_ERR_PROP return ret; }
 
@@ -1087,6 +1488,9 @@ extern "C" {
 				      int max_n_rec_spike_times)
   { int ret = 0; BEGIN_ERR_PROP {
     
+#ifndef NDEBUG
+    printf ("NESTGPU_ActivateRecSpikeTimes %i \t %i \n", i_node, n_node);
+#endif
       ret = NESTGPU_instance->ActivateRecSpikeTimes(i_node, n_node,
 						      max_n_rec_spike_times);
   } END_ERR_PROP return ret; }
@@ -1095,6 +1499,9 @@ extern "C" {
 				   int rec_spike_times_step)
   { int ret = 0; BEGIN_ERR_PROP {
     
+#ifndef NDEBUG
+    printf ("NESTGPU_SetRecSpikeTimesStep %i \t %i \n", i_node, n_node);
+#endif
       ret = NESTGPU_instance->SetRecSpikeTimesStep(i_node, n_node,
 						   rec_spike_times_step);
   } END_ERR_PROP return ret; }
@@ -1103,6 +1510,9 @@ extern "C" {
   int NESTGPU_GetNRecSpikeTimes(int i_node)
   { int ret = 0; BEGIN_ERR_PROP {
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNRecSpikeTimes %i \n", i_node);
+#endif
       ret = NESTGPU_instance->GetNRecSpikeTimes(i_node);
   } END_ERR_PROP return ret; }
 
@@ -1110,6 +1520,9 @@ extern "C" {
 			       int **n_spike_times_pt,
 			       float ***spike_times_pt)
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetRecSpikeTimes %i \t %i \n", i_node, n_node);
+#endif
     ret = NESTGPU_instance->GetRecSpikeTimes(i_node, n_node, n_spike_times_pt,
 					     spike_times_pt);
     
@@ -1118,6 +1531,9 @@ extern "C" {
   int NESTGPU_PushSpikesToNodes(int n_spikes, int *node_id)
   { int ret = 0; BEGIN_ERR_PROP {
     
+#ifndef NDEBUG
+    printf ("NESTGPU_PushSpikesToNodes %i \n", n_spikes);
+#endif
       ret = NESTGPU_instance->PushSpikesToNodes(n_spikes, node_id);
   } END_ERR_PROP return ret; }
 
@@ -1125,6 +1541,9 @@ extern "C" {
 			      float **spike_height, int include_zeros)
   { int ret = 0; BEGIN_ERR_PROP {
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetExtNeuronInputSpikes %i \n", include_zeros);
+#endif
       ret = NESTGPU_instance->GetExtNeuronInputSpikes(n_spikes, node, port,
 							spike_height,
 							include_zeros>0);
@@ -1135,6 +1554,10 @@ extern "C" {
   { float ret = 0.0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetNeuronGroupParam %i \t %i \t %s \t %f \n",
+            i_node, n_node, param_name, val);
+#endif
     ret = NESTGPU_instance->SetNeuronGroupParam(i_node, n_node,
 						  param_name_str,
 						  val);
@@ -1144,6 +1567,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsNeuronGroupParam %i \t %s \n", i_node, param_name);
+#endif
     ret = NESTGPU_instance->IsNeuronGroupParam(i_node, param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1151,18 +1577,27 @@ extern "C" {
   { float ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNeuronGroupParam %i \t %s \n", i_node, param_name);
+#endif
     ret = NESTGPU_instance->GetNeuronGroupParam(i_node, param_name_str);
   } END_ERR_PROP return ret; }
 
 
   int NESTGPU_GetNBoolParam()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNBoolParam \n");
+#endif
     ret = NESTGPU_instance->GetNBoolParam();
   } END_ERR_PROP return ret; }
 
   
   char **NESTGPU_GetBoolParamNames()
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetBoolParamNames \n");
+#endif
     std::vector<std::string> name_vect =
       NESTGPU_instance->GetBoolParamNames();
     char **name_array = (char**)malloc(name_vect.size()
@@ -1183,6 +1618,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsBoolParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->IsBoolParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1191,6 +1629,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetBoolParamIdx %s \n", param_name);
+#endif
     ret = NESTGPU_instance->GetBoolParamIdx(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1199,6 +1640,9 @@ extern "C" {
   { bool ret = true; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetBoolParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->GetBoolParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1207,18 +1651,27 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_SetBoolParam %s \t %d \n", param_name, val);
+#endif
     ret = NESTGPU_instance->SetBoolParam(param_name_str, val);
   } END_ERR_PROP return ret; }
 
 
   int NESTGPU_GetNFloatParam()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNFloatParam \n");
+#endif
     ret = NESTGPU_instance->GetNFloatParam();
   } END_ERR_PROP return ret; }
 
   
   char **NESTGPU_GetFloatParamNames()
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetFloatParamNames \n");
+#endif
     std::vector<std::string> name_vect =
       NESTGPU_instance->GetFloatParamNames();
     char **name_array = (char**)malloc(name_vect.size()
@@ -1239,6 +1692,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsFloatParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->IsFloatParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1247,6 +1703,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetFloatParamIdx %s \n", param_name);
+#endif
     ret = NESTGPU_instance->GetFloatParamIdx(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1255,6 +1714,9 @@ extern "C" {
   { float ret = 0.0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetFloatParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->GetFloatParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1263,17 +1725,26 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_SetFloatParam %s \t %f \n", param_name, val);
+#endif
     ret = NESTGPU_instance->SetFloatParam(param_name_str, val);
   } END_ERR_PROP return ret; }
 
   int NESTGPU_GetNIntParam()
   { int ret = 0; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetNIntParam \n");
+#endif
     ret = NESTGPU_instance->GetNIntParam();
   } END_ERR_PROP return ret; }
 
   
   char **NESTGPU_GetIntParamNames()
   { char **ret = NULL; BEGIN_ERR_PROP {
+#ifndef NDEBUG
+    printf ("NESTGPU_GetIntParamNames \n");
+#endif
     std::vector<std::string> name_vect =
       NESTGPU_instance->GetIntParamNames();
     char **name_array = (char**)malloc(name_vect.size()
@@ -1294,6 +1765,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_IsIntParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->IsIntParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1302,6 +1776,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     std::string param_name_str = std::string(param_name);
     
+#ifndef NDEBUG
+    printf ("NESTGPU_GetIntParamIdx %s \n", param_name);
+#endif
     ret = NESTGPU_instance->GetIntParamIdx(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1310,6 +1787,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_GetIntParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->GetIntParam(param_name_str);
   } END_ERR_PROP return ret; }
 
@@ -1318,6 +1798,9 @@ extern "C" {
   { int ret = 0; BEGIN_ERR_PROP {
     
     std::string param_name_str = std::string(param_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_SetIntParam %s \n", param_name);
+#endif
     ret = NESTGPU_instance->SetIntParam(param_name_str, val);
   } END_ERR_PROP return ret; }
 
@@ -1325,6 +1808,9 @@ extern "C" {
 			     int n_port)
   { int ret = 0; BEGIN_ERR_PROP {
     std::string model_name_str = std::string(model_name);
+#ifndef NDEBUG
+    printf ("NESTGPU_RemoteCreate %i \t %s \t %i \n", i_host, model_name, n_neuron);
+#endif
     RemoteNodeSeq rneur = NESTGPU_instance->RemoteCreate(i_host,
 							   model_name_str,
 							   n_neuron,
